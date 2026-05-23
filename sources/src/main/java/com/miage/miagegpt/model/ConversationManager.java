@@ -69,9 +69,12 @@ public class ConversationManager {
         }
 
         result.sort((a, b) -> {
-            if (a.date == null && b.date == null) return 0;
-            if (a.date == null) return 1;
-            if (b.date == null) return -1;
+            if (a.date == null && b.date == null)
+                return 0;
+            if (a.date == null)
+                return 1;
+            if (b.date == null)
+                return -1;
             return b.date.compareTo(a.date);
         });
 
@@ -82,7 +85,8 @@ public class ConversationManager {
         String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
 
         int separatorIndex = content.indexOf(META_SEPARATOR);
-        if (separatorIndex < 0) return null;
+        if (separatorIndex < 0)
+            return null;
 
         String metaPart = content.substring(0, separatorIndex);
         String historyPart = content.substring(separatorIndex + META_SEPARATOR.length());

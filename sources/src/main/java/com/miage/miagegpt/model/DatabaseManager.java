@@ -1,15 +1,8 @@
 package com.miage.miagegpt.model;
 
-import com.miage.miagegpt.service.PathResolver;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 public class DatabaseManager {
 
@@ -19,61 +12,41 @@ public class DatabaseManager {
     private static final String DB_PASSWORD = DB_SETTINGS != null ? DB_SETTINGS.password : null;
 
     private static DatabaseSettings tryLoadDatabaseSettings() {
-        Properties properties = new Properties();
+        // URL codée en dur fournie par l'utilisateur
+        String raw = "postgresql://user_read:Paris1Sorbonne@ep-long-block-aln0qwfo-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
 
-        File dataDir = PathResolver.getDataDir();
-        File configFile = new File(dataDir, "database.properties");
-        
-        if (!configFile.exists()) {
+        if (raw == null || raw.isBlank()) {
+            System.err.println("[DB] URL codée en dur manquante.");
             return null;
         }
 
-        try (InputStream inputStream = new FileInputStream(configFile)) {
-            properties.load(inputStream);
-        } catch (IOException e) {
-            throw new IllegalStateException("Impossible de charger MiageGPT-Data/database.properties", e);
-        }
-
-        String envUrl = System.getenv("NEON_DATABASE_URL");
-        if (envUrl == null || envUrl.isEmpty()) envUrl = System.getenv("DATABASE_URL");
-        String envUser = System.getenv("DATABASE_USER");
-        String envPassword = System.getenv("DATABASE_PASSWORD");
-
-        String url = firstNonEmpty(envUrl, properties.getProperty("database.url"));
-        String user = firstNonEmpty(envUser, properties.getProperty("database.user"));
-        String password = firstNonEmpty(envPassword, properties.getProperty("database.password"));
-
-        if (url == null || url.isEmpty()) {
-            System.err.println("[DB] URL de la base absente dans database.properties et variables d'environnement.");
-            return null;
-        }
-
+        String url = raw;
         if (url.startsWith("postgres://") || url.startsWith("postgresql://")) {
             String protocol = url.startsWith("postgresql://") ? "postgresql://" : "postgres://";
             String withoutProto = url.substring(protocol.length());
             String[] parts = withoutProto.split("@", 2);
+            if (parts.length < 2) {
+                System.err.println("[DB] URL PostgreSQL invalide.");
+                return null;
+            }
             String creds = parts[0];
             String hostpart = parts[1];
             String[] credParts = creds.split(":", 2);
-            if (user == null || user.isEmpty()) user = credParts[0];
-            if (password == null || password.isEmpty()) password = credParts.length > 1 ? credParts[1] : "";
+            String user = credParts[0];
+            String password = credParts.length > 1 ? credParts[1] : "";
             String[] hostParts = hostpart.split("/", 2);
             String hostPort = hostParts[0];
             String dbName = hostParts.length > 1 ? hostParts[1] : "";
-            url = "jdbc:postgresql://" + hostPort + "/" + dbName + "?sslmode=require&channel_binding=require";
+            String jdbcUrl = "jdbc:postgresql://" + hostPort + "/" + dbName
+                    + "?sslmode=require&channel_binding=require";
+            return new DatabaseSettings(jdbcUrl, user, password);
         }
 
-        if (!url.startsWith("jdbc:postgresql:")) {
-            System.err.println("[DB] DATABASE_URL doit être une URL PostgreSQL.");
-            return null;
+        if (url.startsWith("jdbc:postgresql:")) {
+            return new DatabaseSettings(url, "", "");
         }
 
-        return new DatabaseSettings(url, user != null ? user : "", password != null ? password : "");
-    }
-
-    private static String firstNonEmpty(String first, String second) {
-        if (first != null && !first.isEmpty()) return first;
-        if (second != null && !second.isEmpty()) return second;
+        System.err.println("[DB] URL PostgreSQL codée en dur invalide.");
         return null;
     }
 
@@ -124,7 +97,7 @@ public class DatabaseManager {
         }
 
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
-            
+
         } catch (SQLException e) {
             System.err.println("[DB] Erreur lors de l'initialisation : " + e.getMessage());
         }
@@ -132,8 +105,8 @@ public class DatabaseManager {
 
     public String getAssociationInfo() {
         try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM association_info LIMIT 1")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM association_info LIMIT 1")) {
 
             if (rs.next()) {
                 StringBuilder sb = new StringBuilder();
@@ -142,10 +115,13 @@ public class DatabaseManager {
                 sb.append("Adresse : ").append(rs.getString("adresse")).append("\n");
                 try {
                     String universite = rs.getString("universite");
-                    if (universite != null && !universite.isEmpty()) sb.append("Université/Campus : ").append(universite).append("\n");
+                    if (universite != null && !universite.isEmpty())
+                        sb.append("Université/Campus : ").append(universite).append("\n");
                     String typeAsso = rs.getString("type_asso");
-                    if (typeAsso != null && !typeAsso.isEmpty()) sb.append("Type : ").append(typeAsso).append("\n");
-                } catch (SQLException ignored) {}
+                    if (typeAsso != null && !typeAsso.isEmpty())
+                        sb.append("Type : ").append(typeAsso).append("\n");
+                } catch (SQLException ignored) {
+                }
                 return sb.toString().trim();
             }
         } catch (SQLException e) {
@@ -156,8 +132,8 @@ public class DatabaseManager {
 
     public String searchMemberByRole(String role) {
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                 "SELECT * FROM membres WHERE LOWER(role) LIKE ?")) {
+                PreparedStatement ps = conn.prepareStatement(
+                        "SELECT * FROM membres WHERE LOWER(role) LIKE ?")) {
 
             ps.setString(1, "%" + role.toLowerCase() + "%");
             ResultSet rs = ps.executeQuery();
@@ -165,13 +141,12 @@ public class DatabaseManager {
             StringBuilder result = new StringBuilder();
             while (rs.next()) {
                 result.append(String.format(
-                    "Membre : %s %s\nRôle : %s\nEmail : %s\nDescription : %s\n---\n",
-                    rs.getString("prenom"),
-                    rs.getString("nom"),
-                    rs.getString("role"),
-                    rs.getString("email"),
-                    rs.getString("description")
-                ));
+                        "Membre : %s %s\nRôle : %s\nEmail : %s\nDescription : %s\n---\n",
+                        rs.getString("prenom"),
+                        rs.getString("nom"),
+                        rs.getString("role"),
+                        rs.getString("email"),
+                        rs.getString("description")));
             }
             return result.length() > 0 ? result.toString() : null;
 
@@ -183,8 +158,8 @@ public class DatabaseManager {
 
     public String searchMemberByName(String name) {
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                 "SELECT * FROM membres WHERE LOWER(nom) LIKE ? OR LOWER(prenom) LIKE ?")) {
+                PreparedStatement ps = conn.prepareStatement(
+                        "SELECT * FROM membres WHERE LOWER(nom) LIKE ? OR LOWER(prenom) LIKE ?")) {
 
             ps.setString(1, "%" + name.toLowerCase() + "%");
             ps.setString(2, "%" + name.toLowerCase() + "%");
@@ -193,13 +168,12 @@ public class DatabaseManager {
             StringBuilder result = new StringBuilder();
             while (rs.next()) {
                 result.append(String.format(
-                    "Membre : %s %s\nRôle : %s\nEmail : %s\nDescription : %s\n---\n",
-                    rs.getString("prenom"),
-                    rs.getString("nom"),
-                    rs.getString("role"),
-                    rs.getString("email"),
-                    rs.getString("description")
-                ));
+                        "Membre : %s %s\nRôle : %s\nEmail : %s\nDescription : %s\n---\n",
+                        rs.getString("prenom"),
+                        rs.getString("nom"),
+                        rs.getString("role"),
+                        rs.getString("email"),
+                        rs.getString("description")));
             }
             return result.length() > 0 ? result.toString() : null;
 
@@ -211,20 +185,19 @@ public class DatabaseManager {
 
     public String getAllMembers() {
         try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM membres ORDER BY role")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM membres ORDER BY role")) {
 
             StringBuilder result = new StringBuilder();
             while (rs.next()) {
                 String desc = rs.getString("description");
                 result.append(String.format(
-                    "- %s %s : %s (%s)%s\n",
-                    rs.getString("prenom"),
-                    rs.getString("nom"),
-                    rs.getString("role"),
-                    rs.getString("email"),
-                    (desc != null && !desc.isEmpty()) ? " — " + desc : ""
-                ));
+                        "- %s %s : %s (%s)%s\n",
+                        rs.getString("prenom"),
+                        rs.getString("nom"),
+                        rs.getString("role"),
+                        rs.getString("email"),
+                        (desc != null && !desc.isEmpty()) ? " — " + desc : ""));
             }
             return result.length() > 0 ? result.toString() : null;
 
@@ -236,8 +209,8 @@ public class DatabaseManager {
 
     public String searchFAQ(String keyword) {
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                 "SELECT * FROM faq WHERE LOWER(question) LIKE ? OR LOWER(reponse) LIKE ? OR LOWER(categorie) LIKE ?")) {
+                PreparedStatement ps = conn.prepareStatement(
+                        "SELECT * FROM faq WHERE LOWER(question) LIKE ? OR LOWER(reponse) LIKE ? OR LOWER(categorie) LIKE ?")) {
 
             ps.setString(1, "%" + keyword.toLowerCase() + "%");
             ps.setString(2, "%" + keyword.toLowerCase() + "%");
@@ -247,11 +220,10 @@ public class DatabaseManager {
             StringBuilder result = new StringBuilder();
             while (rs.next()) {
                 result.append(String.format(
-                    "Q: %s\nR: %s\n(Catégorie: %s)\n---\n",
-                    rs.getString("question"),
-                    rs.getString("reponse"),
-                    rs.getString("categorie")
-                ));
+                        "Q: %s\nR: %s\n(Catégorie: %s)\n---\n",
+                        rs.getString("question"),
+                        rs.getString("reponse"),
+                        rs.getString("categorie")));
             }
             return result.length() > 0 ? result.toString() : null;
 
@@ -263,18 +235,17 @@ public class DatabaseManager {
 
     public String getAllReseaux() {
         try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM reseaux_sociaux ORDER BY type")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM reseaux_sociaux ORDER BY type")) {
 
             StringBuilder result = new StringBuilder();
             while (rs.next()) {
                 String libelle = rs.getString("libelle");
                 result.append(String.format(
-                    "- %s : %s%s\n",
-                    rs.getString("type"),
-                    rs.getString("valeur"),
-                    (libelle != null && !libelle.isEmpty()) ? " (" + libelle + ")" : ""
-                ));
+                        "- %s : %s%s\n",
+                        rs.getString("type"),
+                        rs.getString("valeur"),
+                        (libelle != null && !libelle.isEmpty()) ? " (" + libelle + ")" : ""));
             }
             return result.length() > 0 ? result.toString() : null;
 
@@ -286,17 +257,16 @@ public class DatabaseManager {
 
     public String getAllFAQ() {
         try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM faq ORDER BY categorie")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM faq ORDER BY categorie")) {
 
             StringBuilder result = new StringBuilder();
             while (rs.next()) {
                 result.append(String.format(
-                    "Q: %s\nR: %s\n(Catégorie: %s)\n---\n",
-                    rs.getString("question"),
-                    rs.getString("reponse"),
-                    rs.getString("categorie")
-                ));
+                        "Q: %s\nR: %s\n(Catégorie: %s)\n---\n",
+                        rs.getString("question"),
+                        rs.getString("reponse"),
+                        rs.getString("categorie")));
             }
             return result.length() > 0 ? result.toString() : null;
 
@@ -315,8 +285,8 @@ public class DatabaseManager {
                 String tableData = buildTableSnapshot(conn, table, 5);
                 if (tableData != null && !tableData.isBlank()) {
                     data.append("[").append(table.toUpperCase()).append("]\n")
-                        .append(tableData)
-                        .append("\n\n");
+                            .append(tableData)
+                            .append("\n\n");
                 }
             }
 
@@ -331,7 +301,7 @@ public class DatabaseManager {
         List<String> tables = new ArrayList<>();
         DatabaseMetaData metaData = conn.getMetaData();
 
-        try (ResultSet rs = metaData.getTables(null, "public", "%", new String[]{"TABLE"})) {
+        try (ResultSet rs = metaData.getTables(null, "public", "%", new String[] { "TABLE" })) {
             while (rs.next()) {
                 String tableName = rs.getString("TABLE_NAME");
                 if (tableName != null && !tableName.isBlank()) {
@@ -393,8 +363,8 @@ public class DatabaseManager {
 
     public String searchReseaux(String keyword) {
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                 "SELECT * FROM reseaux_sociaux WHERE LOWER(type) LIKE ? OR LOWER(valeur) LIKE ? OR LOWER(libelle) LIKE ?")) {
+                PreparedStatement ps = conn.prepareStatement(
+                        "SELECT * FROM reseaux_sociaux WHERE LOWER(type) LIKE ? OR LOWER(valeur) LIKE ? OR LOWER(libelle) LIKE ?")) {
 
             ps.setString(1, "%" + keyword.toLowerCase() + "%");
             ps.setString(2, "%" + keyword.toLowerCase() + "%");
@@ -405,11 +375,10 @@ public class DatabaseManager {
             while (rs.next()) {
                 String libelle = rs.getString("libelle");
                 result.append(String.format(
-                    "%s : %s%s\n",
-                    rs.getString("type"),
-                    rs.getString("valeur"),
-                    (libelle != null && !libelle.isEmpty()) ? " (" + libelle + ")" : ""
-                ));
+                        "%s : %s%s\n",
+                        rs.getString("type"),
+                        rs.getString("valeur"),
+                        (libelle != null && !libelle.isEmpty()) ? " (" + libelle + ")" : ""));
             }
             return result.length() > 0 ? result.toString() : null;
 
