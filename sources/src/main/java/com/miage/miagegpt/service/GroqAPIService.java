@@ -110,11 +110,7 @@ public class GroqAPIService {
             }
         }
 
-        String wrappedQuestion = userQuestion
-                + "\n\n[CONSIGNE SYSTÈME : Réponds UNIQUEMENT avec les données fournies dans le message système. " +
-                "Ne cite AUCUN lien, URL, site web, email ou information qui ne figure pas TEXTUELLEMENT dans les données. "
-                +
-                "Si tu ne trouves pas l'information, dis simplement que tu ne l'as pas.]";
+        String wrappedQuestion = userQuestion;
 
         messages.append(",{\"role\": \"user\", \"content\": \"")
                 .append(escapeJson(wrappedQuestion))

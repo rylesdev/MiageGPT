@@ -187,7 +187,6 @@ public class APIKeyDialog {
 
         Scene scene = new Scene(root);
         
-        // Ajouter un écouteur de clavier pour la touche Entrée
         final Button defaultButton = (keepButton != null) ? keepButton : confirmButton;
         scene.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
@@ -198,7 +197,6 @@ public class APIKeyDialog {
         
         stage.setScene(scene);
         
-        // Donner le focus au bouton par défaut
         stage.setOnShown(event -> defaultButton.requestFocus());
         stage.showAndWait();
 

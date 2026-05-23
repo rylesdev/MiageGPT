@@ -145,7 +145,6 @@ public class ConversationManager {
         if (!sourceFile.exists()) {
             throw new FileNotFoundException("Fichier source introuvable pour la conversation : " + name);
         }
-        // Copier le fichier .conv en .txt
         Files.copy(sourceFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
 

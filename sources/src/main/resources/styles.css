@@ -22,9 +22,11 @@
 .send-btn {
     -fx-background-color: #000000;
     -fx-text-fill: white;
-    -fx-font-size: 16px;
-    -fx-font-weight: bold;
-    -fx-padding: 12;
+    -fx-font-size: 20px;
+    -fx-font-weight: normal;
+    -fx-font-family: 'Segoe UI Symbol', 'Segoe UI', Arial;
+    -fx-padding: 0;
+    -fx-alignment: center;
     -fx-min-width: 46px;
     -fx-min-height: 46px;
     -fx-pref-width: 46px;
@@ -113,9 +115,9 @@
 
 .dark-mode .input-field {
     -fx-background-color: #40414F;
-    -fx-text-fill: #111827;
+    -fx-text-fill: #FFFFFF;
     -fx-highlight-fill: #2563EB;
-    -fx-highlight-text-fill: #111827;
+    -fx-highlight-text-fill: #FFFFFF;
     -fx-prompt-text-fill: #8E8EA0;
     -fx-border-color: transparent;
     -fx-border-width: 0.3;

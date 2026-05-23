@@ -7,6 +7,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class DatabaseManager {
@@ -19,9 +21,10 @@ public class DatabaseManager {
     private static DatabaseSettings tryLoadDatabaseSettings() {
         Properties properties = new Properties();
 
-        File configFile = new File(PathResolver.getDataDir(), "database.properties");
+        File dataDir = PathResolver.getDataDir();
+        File configFile = new File(dataDir, "database.properties");
+        
         if (!configFile.exists()) {
-            System.err.println("[DB] Aucun fichier MiageGPT-Data/database.properties trouvé — base NEON non configurée.");
             return null;
         }
 
@@ -45,8 +48,9 @@ public class DatabaseManager {
             return null;
         }
 
-        if (url.startsWith("postgres://")) {
-            String withoutProto = url.substring("postgres://".length());
+        if (url.startsWith("postgres://") || url.startsWith("postgresql://")) {
+            String protocol = url.startsWith("postgresql://") ? "postgresql://" : "postgres://";
+            String withoutProto = url.substring(protocol.length());
             String[] parts = withoutProto.split("@", 2);
             String creds = parts[0];
             String hostpart = parts[1];
@@ -115,13 +119,14 @@ public class DatabaseManager {
 
     private void initDatabase() {
         if (DB_URL == null || DB_URL.isEmpty()) {
+            System.err.println("[DB] Connexion ignorée : base de données non configurée.");
             return;
         }
 
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
+            
         } catch (SQLException e) {
             System.err.println("[DB] Erreur lors de l'initialisation : " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -144,7 +149,7 @@ public class DatabaseManager {
                 return sb.toString().trim();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("[DB] " + e.getMessage());
         }
         return null;
     }
@@ -171,7 +176,7 @@ public class DatabaseManager {
             return result.length() > 0 ? result.toString() : null;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("[DB] " + e.getMessage());
         }
         return null;
     }
@@ -199,7 +204,7 @@ public class DatabaseManager {
             return result.length() > 0 ? result.toString() : null;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("[DB] " + e.getMessage());
         }
         return null;
     }
@@ -224,7 +229,7 @@ public class DatabaseManager {
             return result.length() > 0 ? result.toString() : null;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("[DB] " + e.getMessage());
         }
         return null;
     }
@@ -251,7 +256,7 @@ public class DatabaseManager {
             return result.length() > 0 ? result.toString() : null;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("[DB] " + e.getMessage());
         }
         return null;
     }
@@ -302,29 +307,88 @@ public class DatabaseManager {
     }
 
     public String getAllData() {
-        StringBuilder data = new StringBuilder();
+        try (Connection conn = getConnection()) {
+            StringBuilder data = new StringBuilder();
+            List<String> tables = listPublicTables(conn);
 
-        String asso = getAssociationInfo();
-        if (asso != null) {
-            data.append("[ASSOCIATION]\n").append(asso).append("\n\n");
+            for (String table : tables) {
+                String tableData = buildTableSnapshot(conn, table, 5);
+                if (tableData != null && !tableData.isBlank()) {
+                    data.append("[").append(table.toUpperCase()).append("]\n")
+                        .append(tableData)
+                        .append("\n\n");
+                }
+            }
+
+            return data.length() > 0 ? data.toString().trim() : null;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private List<String> listPublicTables(Connection conn) throws SQLException {
+        List<String> tables = new ArrayList<>();
+        DatabaseMetaData metaData = conn.getMetaData();
+
+        try (ResultSet rs = metaData.getTables(null, "public", "%", new String[]{"TABLE"})) {
+            while (rs.next()) {
+                String tableName = rs.getString("TABLE_NAME");
+                if (tableName != null && !tableName.isBlank()) {
+                    tables.add(tableName);
+                }
+            }
         }
 
-        String membres = getAllMembers();
-        if (membres != null) {
-            data.append("[ÉQUIPE / MEMBRES]\n").append(membres).append("\n");
+        return tables;
+    }
+
+    private String buildTableSnapshot(Connection conn, String tableName, int limit) throws SQLException {
+        List<String> columns = listColumnNames(conn, tableName);
+        if (columns.isEmpty()) {
+            return null;
         }
 
-        String faq = getAllFAQ();
-        if (faq != null) {
-            data.append("[FAQ]\n").append(faq).append("\n");
+        String sql = "SELECT * FROM \"" + tableName.replace("\"", "\"\"") + "\" LIMIT " + limit;
+        StringBuilder result = new StringBuilder();
+
+        try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+            int rowCount = 0;
+            while (rs.next()) {
+                rowCount++;
+                result.append("- ligne ").append(rowCount).append(": ");
+                boolean wroteField = false;
+                for (String column : columns) {
+                    String value = rs.getString(column);
+                    if (value != null && !value.isBlank()) {
+                        if (wroteField) {
+                            result.append(" | ");
+                        }
+                        result.append(column).append("=").append(value.trim().replace("\n", " "));
+                        wroteField = true;
+                    }
+                }
+                result.append("\n");
+            }
         }
 
-        String reseaux = getAllReseaux();
-        if (reseaux != null) {
-            data.append("[RÉSEAUX / LIENS]\n").append(reseaux).append("\n");
+        return result.length() > 0 ? result.toString().trim() : null;
+    }
+
+    private List<String> listColumnNames(Connection conn, String tableName) throws SQLException {
+        List<String> columns = new ArrayList<>();
+        DatabaseMetaData metaData = conn.getMetaData();
+
+        try (ResultSet rs = metaData.getColumns(null, "public", tableName, "%")) {
+            while (rs.next()) {
+                String columnName = rs.getString("COLUMN_NAME");
+                if (columnName != null && !columnName.isBlank()) {
+                    columns.add(columnName);
+                }
+            }
         }
 
-        return data.length() > 0 ? data.toString().trim() : null;
+        return columns;
     }
 
     public String searchReseaux(String keyword) {

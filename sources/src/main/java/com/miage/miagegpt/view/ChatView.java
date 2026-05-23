@@ -195,7 +195,7 @@ public class ChatView {
         inputField.setMaxWidth(800);
         inputField.getStyleClass().add("input-field");
 
-        sendBtn = new Button("âž¤");
+        sendBtn = new Button("➤");
         sendBtn.getStyleClass().add("send-btn");
 
         HBox inputBox = new HBox(10, inputField, sendBtn);
@@ -791,21 +791,18 @@ public class ChatView {
         double width = 180;
         double height = 44;
         double cornerRadius = 14;
+        double gradientW = width * 12;
+        double gradientH = height * 12;
 
         StackPane buttonContainer = new StackPane();
         buttonContainer.setPrefSize(width, height);
         buttonContainer.setMaxSize(width, height);
 
-        double gradientW = width * 12;
-        double gradientH = height * 12;
         javafx.scene.shape.Rectangle gradientRect = new javafx.scene.shape.Rectangle(gradientW, gradientH);
         gradientRect.setFill(javafx.scene.paint.LinearGradient.valueOf(
                 "from 0% 0% to 100% 100%, #7CE8FF 0%, #4CA4FF 20%, #7A6BFF 40%, #FF7EDB 60%, #FFD95E 80%, #7CE8FF 100%"));
         gradientRect.setMouseTransparent(true);
         gradientRect.setManaged(false);
-
-        gradientRect.setTranslateX(-(gradientW - width) / 2.0);
-        gradientRect.setTranslateY(-(gradientH - height) / 2.0);
 
         javafx.animation.RotateTransition rotate = new javafx.animation.RotateTransition(
                 javafx.util.Duration.seconds(5), gradientRect);
@@ -824,6 +821,23 @@ public class ChatView {
         innerBackground.setArcHeight((cornerRadius - 2) * 2);
         innerBackground.setId("innerBackground");
         innerBackground.setFill(javafx.scene.paint.Color.rgb(32, 33, 35, 1.0));
+
+        java.util.function.BiConsumer<Double, Double> alignGradient = (currentWidth, currentHeight) -> {
+            double alignedWidth = currentWidth != null && currentWidth > 0 ? currentWidth : width;
+            double alignedHeight = currentHeight != null && currentHeight > 0 ? currentHeight : height;
+            gradientRect.setTranslateX((alignedWidth - gradientW) / 2.0);
+            gradientRect.setTranslateY((alignedHeight - gradientH) / 2.0);
+            clipRect.setWidth(alignedWidth);
+            clipRect.setHeight(alignedHeight);
+            innerBackground.setWidth(Math.max(0, alignedWidth - 4));
+            innerBackground.setHeight(Math.max(0, alignedHeight - 4));
+        };
+
+        buttonContainer.widthProperty().addListener((obs, oldValue, newValue) ->
+            alignGradient.accept(newValue.doubleValue(), buttonContainer.getHeight()));
+        buttonContainer.heightProperty().addListener((obs, oldValue, newValue) ->
+            alignGradient.accept(buttonContainer.getWidth(), newValue.doubleValue()));
+        alignGradient.accept(width, height);
 
         javafx.scene.control.Label label = new javafx.scene.control.Label(text);
         label.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 12));
@@ -875,7 +889,7 @@ public class ChatView {
             loaderTimeline.stop();
         }
 
-        String[] loaderStates = { "â ‹", "â ™", "â ¹", "â ¸", "â ¼", "â ´", "â ¦", "â §", "â ‡", "â " };
+        String[] loaderStates = { "•", "◦", "▪", "▫", "◐", "◓", "◑", "◒", "➤", "➜" };
         final int[] index = { 0 };
 
         loaderTimeline = new javafx.animation.Timeline(
@@ -897,7 +911,7 @@ public class ChatView {
             loaderTimeline = null;
         }
         if (sendBtn != null) {
-            sendBtn.setText("âž¤");
+            sendBtn.setText("➤");
         }
     }
 
