@@ -86,7 +86,7 @@ public class GroqAPIService {
         messages.append(",{\"role\": \"user\", \"content\": \"").append(escapeJson(userQuestion)).append("\"}");
 
         return "{" +
-                "\"model\": \"llama-3.1-8b-instant\"," + //
+            "\"model\": \"meta-llama/llama-4-scout-17b-16e-instruct\"," + //
                 "\"messages\": [" + messages.toString() + "]," +
                 "\"max_tokens\": 200," +
                 "\"temperature\": 0.0," +
@@ -214,7 +214,7 @@ public class GroqAPIService {
                 .append("\"}");
 
         return "{" +
-            "\"model\": \"llama-3.1-8b-instant\"," +
+            "\"model\": \"meta-llama/llama-4-scout-17b-16e-instruct\"," +
                 "\"messages\": [" + messages.toString() + "]," +
                 "\"max_tokens\": 1024," +
                 "\"temperature\": 0.0," +
@@ -332,7 +332,7 @@ public class GroqAPIService {
             connection.setReadTimeout(TIMEOUT);
             connection.setDoOutput(true);
 
-            String testBody = "{\"model\": \"llama-3.1-8b-instant\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1,\"temperature\":0.0,\"top_p\":0.1}";
+            String testBody = "{\"model\": \"meta-llama/llama-4-scout-17b-16e-instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1,\"temperature\":0.0,\"top_p\":0.1}";
 
             try (OutputStream os = connection.getOutputStream()) {
                 byte[] input = testBody.getBytes(StandardCharsets.UTF_8);
