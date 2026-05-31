@@ -17,7 +17,10 @@ public class QuestionAnalyzer {
     public String buildSystemPrompt(String dbContext) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("Tu es MiageGPT, le chatbot officiel de l'association AMS (Association MIAGE Sorbonne) et de la filière MIAGE.\n");
-        prompt.append("Réponds simplement, clairement et avec un ton naturel.\n");
+        prompt.append("Réponds en français, de façon claire, précise, concise et utile.\n");
+        prompt.append("Évite les répétitions, les détours inutiles et les réponses embrouillées.\n");
+        prompt.append("Si la réponse est courte, donne une réponse courte. Si une liste aide, utilise une liste simple.\n");
+        prompt.append("N'affiche jamais d'identifiant technique, notamment les colonnes 'id' de la base de données.\n");
         prompt.append("N'invente pas d'information.\n\n");
 
         if (dbContext != null && !dbContext.isEmpty()) {

@@ -12,7 +12,6 @@ public class DatabaseManager {
     private static final String DB_PASSWORD = DB_SETTINGS != null ? DB_SETTINGS.password : null;
 
     private static DatabaseSettings tryLoadDatabaseSettings() {
-        // URL codée en dur fournie par l'utilisateur
         String raw = "postgresql://user_read:Paris1Sorbonne@ep-long-block-aln0qwfo-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
 
         if (raw == null || raw.isBlank()) {
@@ -66,6 +65,11 @@ public class DatabaseManager {
 
     private DatabaseManager() {
         initDatabase();
+        try {
+            loadSchema();
+        } catch (Exception e) {
+            System.err.println("[DB] Impossible de charger le schéma au démarrage: " + e.getMessage());
+        }
     }
 
     public static synchronized DatabaseManager getInstance() {
@@ -103,198 +107,26 @@ public class DatabaseManager {
         }
     }
 
-    public String getAssociationInfo() {
-        try (Connection conn = getConnection();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT * FROM association_info LIMIT 1")) {
-
-            if (rs.next()) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("Association : ").append(rs.getString("nom")).append("\n");
-                sb.append("Description : ").append(rs.getString("description")).append("\n");
-                sb.append("Adresse : ").append(rs.getString("adresse")).append("\n");
-                try {
-                    String universite = rs.getString("universite");
-                    if (universite != null && !universite.isEmpty())
-                        sb.append("Université/Campus : ").append(universite).append("\n");
-                    String typeAsso = rs.getString("type_asso");
-                    if (typeAsso != null && !typeAsso.isEmpty())
-                        sb.append("Type : ").append(typeAsso).append("\n");
-                } catch (SQLException ignored) {
-                }
-                return sb.toString().trim();
-            }
-        } catch (SQLException e) {
-            System.err.println("[DB] " + e.getMessage());
-        }
-        return null;
-    }
-
-    public String searchMemberByRole(String role) {
-        try (Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement(
-                        "SELECT * FROM membres WHERE LOWER(role) LIKE ?")) {
-
-            ps.setString(1, "%" + role.toLowerCase() + "%");
-            ResultSet rs = ps.executeQuery();
-
-            StringBuilder result = new StringBuilder();
-            while (rs.next()) {
-                result.append(String.format(
-                        "Membre : %s %s\nRôle : %s\nEmail : %s\nDescription : %s\n---\n",
-                        rs.getString("prenom"),
-                        rs.getString("nom"),
-                        rs.getString("role"),
-                        rs.getString("email"),
-                        rs.getString("description")));
-            }
-            return result.length() > 0 ? result.toString() : null;
-
-        } catch (SQLException e) {
-            System.err.println("[DB] " + e.getMessage());
-        }
-        return null;
-    }
-
-    public String searchMemberByName(String name) {
-        try (Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement(
-                        "SELECT * FROM membres WHERE LOWER(nom) LIKE ? OR LOWER(prenom) LIKE ?")) {
-
-            ps.setString(1, "%" + name.toLowerCase() + "%");
-            ps.setString(2, "%" + name.toLowerCase() + "%");
-            ResultSet rs = ps.executeQuery();
-
-            StringBuilder result = new StringBuilder();
-            while (rs.next()) {
-                result.append(String.format(
-                        "Membre : %s %s\nRôle : %s\nEmail : %s\nDescription : %s\n---\n",
-                        rs.getString("prenom"),
-                        rs.getString("nom"),
-                        rs.getString("role"),
-                        rs.getString("email"),
-                        rs.getString("description")));
-            }
-            return result.length() > 0 ? result.toString() : null;
-
-        } catch (SQLException e) {
-            System.err.println("[DB] " + e.getMessage());
-        }
-        return null;
-    }
-
-    public String getAllMembers() {
-        try (Connection conn = getConnection();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT * FROM membres ORDER BY role")) {
-
-            StringBuilder result = new StringBuilder();
-            while (rs.next()) {
-                String desc = rs.getString("description");
-                result.append(String.format(
-                        "- %s %s : %s (%s)%s\n",
-                        rs.getString("prenom"),
-                        rs.getString("nom"),
-                        rs.getString("role"),
-                        rs.getString("email"),
-                        (desc != null && !desc.isEmpty()) ? " — " + desc : ""));
-            }
-            return result.length() > 0 ? result.toString() : null;
-
-        } catch (SQLException e) {
-            System.err.println("[DB] " + e.getMessage());
-        }
-        return null;
-    }
-
-    public String searchFAQ(String keyword) {
-        try (Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement(
-                        "SELECT * FROM faq WHERE LOWER(question) LIKE ? OR LOWER(reponse) LIKE ? OR LOWER(categorie) LIKE ?")) {
-
-            ps.setString(1, "%" + keyword.toLowerCase() + "%");
-            ps.setString(2, "%" + keyword.toLowerCase() + "%");
-            ps.setString(3, "%" + keyword.toLowerCase() + "%");
-            ResultSet rs = ps.executeQuery();
-
-            StringBuilder result = new StringBuilder();
-            while (rs.next()) {
-                result.append(String.format(
-                        "Q: %s\nR: %s\n(Catégorie: %s)\n---\n",
-                        rs.getString("question"),
-                        rs.getString("reponse"),
-                        rs.getString("categorie")));
-            }
-            return result.length() > 0 ? result.toString() : null;
-
-        } catch (SQLException e) {
-            System.err.println("[DB] " + e.getMessage());
-        }
-        return null;
-    }
-
-    public String getAllReseaux() {
-        try (Connection conn = getConnection();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT * FROM reseaux_sociaux ORDER BY type")) {
-
-            StringBuilder result = new StringBuilder();
-            while (rs.next()) {
-                String libelle = rs.getString("libelle");
-                result.append(String.format(
-                        "- %s : %s%s\n",
-                        rs.getString("type"),
-                        rs.getString("valeur"),
-                        (libelle != null && !libelle.isEmpty()) ? " (" + libelle + ")" : ""));
-            }
-            return result.length() > 0 ? result.toString() : null;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public String getAllFAQ() {
-        try (Connection conn = getConnection();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT * FROM faq ORDER BY categorie")) {
-
-            StringBuilder result = new StringBuilder();
-            while (rs.next()) {
-                result.append(String.format(
-                        "Q: %s\nR: %s\n(Catégorie: %s)\n---\n",
-                        rs.getString("question"),
-                        rs.getString("reponse"),
-                        rs.getString("categorie")));
-            }
-            return result.length() > 0 ? result.toString() : null;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     public String getAllData() {
-        try (Connection conn = getConnection()) {
-            StringBuilder data = new StringBuilder();
-            List<String> tables = listPublicTables(conn);
+        StringBuilder data = new StringBuilder();
 
-            for (String table : tables) {
-                String tableData = buildTableSnapshot(conn, table, 5);
-                if (tableData != null && !tableData.isBlank()) {
-                    data.append("[").append(table.toUpperCase()).append("]\n")
-                            .append(tableData)
-                            .append("\n\n");
-                }
+        for (TableInfo tableInfo : schemaCache.values()) {
+            if (tableInfo == null) {
+                continue;
             }
 
-            return data.length() > 0 ? data.toString().trim() : null;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
+            data.append("[").append(tableInfo.name.toUpperCase()).append("]\n");
+            if (tableInfo.rowCount >= 0) {
+                data.append("Total rows: ").append(tableInfo.rowCount).append("\n");
+            }
+            if (tableInfo.fullContent != null && !tableInfo.fullContent.isBlank()) {
+                data.append(tableInfo.fullContent).append("\n\n");
+            } else if (tableInfo.sample != null && !tableInfo.sample.isBlank()) {
+                data.append(tableInfo.sample).append("\n\n");
+            }
         }
+
+        return data.length() > 0 ? data.toString().trim() : null;
     }
 
     private List<String> listPublicTables(Connection conn) throws SQLException {
@@ -313,33 +145,66 @@ public class DatabaseManager {
         return tables;
     }
 
-    private String buildTableSnapshot(Connection conn, String tableName, int limit) throws SQLException {
+    private static final int SCHEMA_PREVIEW_ROW_LIMIT = 2;
+
+    private String buildTableSnapshot(Connection conn, String tableName) throws SQLException {
         List<String> columns = listColumnNames(conn, tableName);
-        if (columns.isEmpty()) {
+        return buildTableContent(conn, tableName, columns, SCHEMA_PREVIEW_ROW_LIMIT, true);
+    }
+
+    private String buildFullTableContent(Connection conn, String tableName, List<String> columns) throws SQLException {
+        return buildTableContent(conn, tableName, columns, 0, false);
+    }
+
+    private String buildTableContent(Connection conn, String tableName, List<String> columns, int rowLimit, boolean includeTotalRows) throws SQLException {
+        if (columns == null || columns.isEmpty()) {
             return null;
         }
 
-        String sql = "SELECT * FROM \"" + tableName.replace("\"", "\"\"") + "\" LIMIT " + limit;
+        String quotedTable = "\"" + tableName.replace("\"", "\"\"") + "\"";
         StringBuilder result = new StringBuilder();
 
-        try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
-            int rowCount = 0;
-            while (rs.next()) {
-                rowCount++;
-                result.append("- ligne ").append(rowCount).append(": ");
-                boolean wroteField = false;
-                for (String column : columns) {
-                    String value = rs.getString(column);
-                    if (value != null && !value.isBlank()) {
-                        if (wroteField) {
-                            result.append(" | ");
-                        }
-                        result.append(column).append("=").append(value.trim().replace("\n", " "));
-                        wroteField = true;
-                    }
+        long totalRows = -1;
+        if (includeTotalRows) {
+            String countSql = "SELECT COUNT(*) AS cnt FROM " + quotedTable;
+            try (Statement countStmt = conn.createStatement(); ResultSet countRs = countStmt.executeQuery(countSql)) {
+                if (countRs.next()) {
+                    totalRows = countRs.getLong("cnt");
                 }
-                result.append("\n");
+            } catch (SQLException ignored) {
+                totalRows = -1;
             }
+        }
+
+        String sql = "SELECT * FROM " + quotedTable;
+        if (rowLimit > 0) {
+            sql += " LIMIT " + rowLimit;
+        }
+
+        java.util.Set<String> uniqueRows = new java.util.LinkedHashSet<>();
+
+        try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                String rowStr = formatRowBlock(columns, rs);
+                if (!rowStr.isEmpty()) {
+                    uniqueRows.add(rowStr);
+                }
+            }
+        }
+
+        if (includeTotalRows && totalRows >= 0) {
+            result.append("Total rows: ").append(totalRows).append("\n");
+        }
+
+        int idx = 0;
+        for (String r : uniqueRows) {
+            idx++;
+            result.append("ROW ").append(idx).append(":\n");
+            result.append(r).append("\n");
+        }
+
+        if (includeTotalRows && totalRows > SCHEMA_PREVIEW_ROW_LIMIT) {
+            result.append("(Affiché: ").append(Math.min((long) SCHEMA_PREVIEW_ROW_LIMIT, totalRows)).append(" lignes échantillonnées et dédupliquées)");
         }
 
         return result.length() > 0 ? result.toString().trim() : null;
@@ -352,7 +217,7 @@ public class DatabaseManager {
         try (ResultSet rs = metaData.getColumns(null, "public", tableName, "%")) {
             while (rs.next()) {
                 String columnName = rs.getString("COLUMN_NAME");
-                if (columnName != null && !columnName.isBlank()) {
+                if (columnName != null && !columnName.isBlank() && !isTechnicalIdColumn(columnName)) {
                     columns.add(columnName);
                 }
             }
@@ -361,31 +226,132 @@ public class DatabaseManager {
         return columns;
     }
 
-    public String searchReseaux(String keyword) {
-        try (Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement(
-                        "SELECT * FROM reseaux_sociaux WHERE LOWER(type) LIKE ? OR LOWER(valeur) LIKE ? OR LOWER(libelle) LIKE ?")) {
-
-            ps.setString(1, "%" + keyword.toLowerCase() + "%");
-            ps.setString(2, "%" + keyword.toLowerCase() + "%");
-            ps.setString(3, "%" + keyword.toLowerCase() + "%");
-            ResultSet rs = ps.executeQuery();
-
-            StringBuilder result = new StringBuilder();
-            while (rs.next()) {
-                String libelle = rs.getString("libelle");
-                result.append(String.format(
-                        "%s : %s%s\n",
-                        rs.getString("type"),
-                        rs.getString("valeur"),
-                        (libelle != null && !libelle.isEmpty()) ? " (" + libelle + ")" : ""));
-            }
-            return result.length() > 0 ? result.toString() : null;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+    private boolean isTechnicalIdColumn(String columnName) {
+        if (columnName == null) {
+            return false;
         }
-        return null;
+        String normalized = columnName.trim().toLowerCase();
+        return normalized.equals("id");
+    }
+
+    private String formatRowBlock(List<String> columns, ResultSet rs) throws SQLException {
+        StringBuilder row = new StringBuilder();
+        boolean hasContent = false;
+
+        for (String column : columns) {
+            if (isTechnicalIdColumn(column)) {
+                continue;
+            }
+
+            String value = rs.getString(column);
+            if (value != null && !value.isBlank()) {
+                row.append("  ").append(column).append(": ").append(value.trim().replace("\n", " ")).append("\n");
+                hasContent = true;
+            }
+        }
+
+        return hasContent ? row.toString().trim() : "";
+    }
+
+    public static class TableInfo {
+        public final String name;
+        public final List<String> columns;
+        public final long rowCount;
+        public final String sample;
+        public final String fullContent;
+
+        public TableInfo(String name, List<String> columns, long rowCount, String sample, String fullContent) {
+            this.name = name;
+            this.columns = columns;
+            this.rowCount = rowCount;
+            this.sample = sample;
+            this.fullContent = fullContent;
+        }
+    }
+
+    private final java.util.Map<String, TableInfo> schemaCache = new java.util.LinkedHashMap<>();
+
+    public synchronized void loadSchema() {
+        try (Connection conn = getConnection()) {
+            List<String> tables = listPublicTables(conn);
+            for (String table : tables) {
+                List<String> columns = listColumnNames(conn, table);
+                long count = -1;
+                try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COUNT(*) AS cnt FROM \"" + table.replace("\"", "\"\"") + "\"")) {
+                    if (rs.next()) count = rs.getLong("cnt");
+                } catch (SQLException ignored) {
+                    count = -1;
+                }
+
+                String sample = null;
+                String fullContent = null;
+                try {
+                    sample = buildTableSnapshot(conn, table);
+                    fullContent = buildFullTableContent(conn, table, columns);
+                } catch (SQLException ignored) {
+                    sample = null;
+                    fullContent = null;
+                }
+
+                TableInfo ti = new TableInfo(table, columns, count, sample, fullContent);
+                schemaCache.put(table, ti);
+            }
+        } catch (SQLException e) {
+            System.err.println("[DB] Erreur loadSchema: " + e.getMessage());
+        }
+    }
+
+    public synchronized java.util.List<TableInfo> getAllTableInfos() {
+        return new ArrayList<>(schemaCache.values());
+    }
+
+    public synchronized TableInfo getTableInfo(String tableName) {
+        return schemaCache.get(tableName);
+    }
+
+    public synchronized String getCachedTableContent(String tableName) {
+        TableInfo tableInfo = schemaCache.get(tableName);
+        return tableInfo != null ? tableInfo.fullContent : null;
+    }
+
+    public synchronized String getSchemaSummary() {
+        StringBuilder sb = new StringBuilder();
+        for (TableInfo ti : schemaCache.values()) {
+            sb.append("TABLE: ").append(ti.name).append("\n");
+            sb.append("COLUMNS: ");
+            if (ti.columns != null && !ti.columns.isEmpty()) {
+                sb.append(String.join(", ", ti.columns));
+            }
+            sb.append("\n");
+            if (ti.rowCount >= 0) sb.append("ROWS: ").append(ti.rowCount).append("\n");
+            if (ti.sample != null && !ti.sample.isBlank()) sb.append("SAMPLE: \n").append(ti.sample).append("\n");
+            sb.append("---\n");
+        }
+        return sb.toString().trim();
+    }
+
+    public java.util.List<String> getTableRows(String tableName, String whereClause, int limit) throws SQLException {
+        List<String> columns;
+        try (Connection conn = getConnection()) {
+            columns = listColumnNames(conn, tableName);
+            if (columns.isEmpty()) return java.util.Collections.emptyList();
+
+            String quotedTable = "\"" + tableName.replace("\"", "\"\"") + "\"";
+            String sql = "SELECT * FROM " + quotedTable;
+            if (whereClause != null && !whereClause.isBlank()) {
+                sql += " WHERE " + whereClause;
+            }
+            if (limit > 0) sql += " LIMIT " + limit;
+
+            List<String> rows = new ArrayList<>();
+            try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+                while (rs.next()) {
+                    String s = formatRowBlock(columns, rs);
+                    if (!s.isEmpty()) rows.add(s);
+                }
+            }
+            return rows;
+        }
     }
 
 }

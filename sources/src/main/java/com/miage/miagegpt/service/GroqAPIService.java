@@ -36,7 +36,14 @@ public class GroqAPIService {
 
     public String getResponseWithHistory(String question, String conversationHistory) {
         try {
-            String dbContext = questionAnalyzer.analyzeAndSearch(question);
+            String schemaSummary = DatabaseManager.getInstance().getSchemaSummary();
+            java.util.List<String> tables = selectTablesForQuestion(schemaSummary, question);
+
+            String dbContext = buildSelectedTablesContext(tables);
+            if (dbContext == null || dbContext.isBlank()) {
+                dbContext = questionAnalyzer.analyzeAndSearch(question);
+            }
+
             String systemPrompt = questionAnalyzer.buildSystemPrompt(dbContext);
             String jsonBody = createJsonRequest(systemPrompt, conversationHistory, question);
             APIResponse response = sendRequest(jsonBody);
@@ -48,12 +55,102 @@ public class GroqAPIService {
 
     public APIResponse getResponseWithHistoryAndPing(String question, String conversationHistory) {
         try {
-            String dbContext = questionAnalyzer.analyzeAndSearch(question);
+            String schemaSummary = DatabaseManager.getInstance().getSchemaSummary();
+            java.util.List<String> tables = selectTablesForQuestion(schemaSummary, question);
+
+            String dbContext = buildSelectedTablesContext(tables);
+            if (dbContext == null || dbContext.isBlank()) {
+                dbContext = questionAnalyzer.analyzeAndSearch(question);
+            }
+
             String systemPrompt = questionAnalyzer.buildSystemPrompt(dbContext);
             String jsonBody = createJsonRequest(systemPrompt, conversationHistory, question);
             return sendRequest(jsonBody);
         } catch (Exception e) {
             return new APIResponse("Erreur : " + e.getMessage(), 0);
+        }
+    }
+
+    private String createJsonRequestForTableSelection(String schemaSummary, String userQuestion) {
+        String system = "Tu es un assistant qui aide à sélectionner les tables pertinentes d'une base de données.\n" +
+                "Tu ne dois pas répondre à la question de l'utilisateur.\n" +
+                "Réponds uniquement par un objet JSON valide avec la clé \"tables\" contenant une liste de 1 à 3 noms de tables pertinentes (en minuscules), par exemple: {\"tables\":[\"membres\",\"faq\"]}.\n" +
+                "Ne fournis aucun texte hors du JSON.\n" +
+                "Voici le schéma de la base (tables, colonnes,counts,samples) :\n" + escapeJson(schemaSummary) + "\n" +
+                "Question de l'utilisateur: \"" + escapeJson(userQuestion) + "\"\n" +
+                "Choisis entre 1 et 3 tables maximum.\n" +
+                "Retourne uniquement le JSON requis.";
+
+        StringBuilder messages = new StringBuilder();
+        messages.append("{\"role\": \"system\", \"content\": \"").append(system).append("\"}");
+        messages.append(",{\"role\": \"user\", \"content\": \"").append(escapeJson(userQuestion)).append("\"}");
+
+        return "{" +
+                "\"model\": \"llama-3.1-8b-instant\"," + //
+                "\"messages\": [" + messages.toString() + "]," +
+                "\"max_tokens\": 200," +
+                "\"temperature\": 0.0," +
+                "\"top_p\": 0.1" +
+                "}";
+    }
+
+    private java.util.List<String> parseTableSelectionResponse(String text) {
+        java.util.List<String> result = new java.util.ArrayList<>();
+        if (text == null || text.isEmpty()) return result;
+
+        try {
+            java.util.regex.Pattern p = java.util.regex.Pattern.compile("\"tables\"\\s*:\\s*\\[(.*?)\\]", java.util.regex.Pattern.DOTALL);
+            java.util.regex.Matcher m = p.matcher(text);
+            if (m.find()) {
+                String inside = m.group(1);
+                java.util.regex.Pattern q = java.util.regex.Pattern.compile("\\\"([^\\\"]+)\\\"");
+                java.util.regex.Matcher mm = q.matcher(inside);
+                while (mm.find()) {
+                    String t = mm.group(1).trim();
+                    if (!t.isEmpty() && result.size() < 3) result.add(t);
+                }
+            }
+        } catch (Exception e) {
+        }
+
+        return result;
+    }
+
+    private String buildSelectedTablesContext(java.util.List<String> tables) {
+        if (tables == null || tables.isEmpty()) {
+            return null;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (String tableName : tables) {
+            DatabaseManager.TableInfo tableInfo = DatabaseManager.getInstance().getTableInfo(tableName);
+            if (tableInfo == null) {
+                continue;
+            }
+
+            sb.append("[").append(tableInfo.name.toUpperCase()).append("]\n");
+            if (tableInfo.rowCount >= 0) {
+                sb.append("Total rows: ").append(tableInfo.rowCount).append("\n");
+            }
+            if (tableInfo.fullContent != null && !tableInfo.fullContent.isBlank()) {
+                sb.append(tableInfo.fullContent).append("\n");
+            } else if (tableInfo.sample != null && !tableInfo.sample.isBlank()) {
+                sb.append(tableInfo.sample).append("\n");
+            }
+            sb.append("\n");
+        }
+
+        return sb.toString().trim();
+    }
+
+    private java.util.List<String> selectTablesForQuestion(String schemaSummary, String question) {
+        try {
+            String json = createJsonRequestForTableSelection(schemaSummary, question);
+            APIResponse r = sendRequest(json);
+            if (r == null || r.content == null) return java.util.Collections.emptyList();
+            return parseTableSelectionResponse(r.content);
+        } catch (Exception e) {
+            return java.util.Collections.emptyList();
         }
     }
 
@@ -117,7 +214,7 @@ public class GroqAPIService {
                 .append("\"}");
 
         return "{" +
-                "\"model\": \"llama-3.3-70b-versatile\"," +
+            "\"model\": \"llama-3.1-8b-instant\"," +
                 "\"messages\": [" + messages.toString() + "]," +
                 "\"max_tokens\": 1024," +
                 "\"temperature\": 0.0," +
@@ -235,7 +332,7 @@ public class GroqAPIService {
             connection.setReadTimeout(TIMEOUT);
             connection.setDoOutput(true);
 
-            String testBody = "{\"model\": \"llama-3.3-70b-versatile\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1,\"temperature\":0.0,\"top_p\":0.1}";
+            String testBody = "{\"model\": \"llama-3.1-8b-instant\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1,\"temperature\":0.0,\"top_p\":0.1}";
 
             try (OutputStream os = connection.getOutputStream()) {
                 byte[] input = testBody.getBytes(StandardCharsets.UTF_8);
