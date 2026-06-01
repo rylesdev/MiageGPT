@@ -76,6 +76,8 @@ public class ChatView {
         scrollPane = new ScrollPane(chatBox);
         scrollPane.setFitToWidth(true);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setFocusTraversable(false);
+        scrollPane.getStyleClass().add("chat-scroll-pane");
 
         dateTimeLabel = new Label();
         dateTimeLabel.getStyleClass().add("header-secondary-label");

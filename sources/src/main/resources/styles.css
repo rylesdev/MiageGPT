@@ -78,6 +78,20 @@
     -fx-font-size: 10px;
 }
 
+.chat-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.chat-scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.chat-scroll-pane .corner {
+    -fx-background-color: transparent;
+}
+
 /* ===== Dark mode ===== */
 
 .dark-mode { -fx-background-color: #086BAE; }
