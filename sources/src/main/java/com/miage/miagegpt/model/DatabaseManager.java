@@ -64,12 +64,6 @@ public class DatabaseManager {
     private static DatabaseManager instance;
 
     private DatabaseManager() {
-        initDatabase();
-        try {
-            loadSchema();
-        } catch (Exception e) {
-            System.err.println("[DB] Impossible de charger le schéma au démarrage: " + e.getMessage());
-        }
     }
 
     public static synchronized DatabaseManager getInstance() {
@@ -77,6 +71,15 @@ public class DatabaseManager {
             instance = new DatabaseManager();
         }
         return instance;
+    }
+
+    public synchronized void initializeAfterApiKeyValidation() {
+        initDatabase();
+        try {
+            loadSchema();
+        } catch (Exception e) {
+            System.err.println("[DB] Impossible de charger le schéma après validation de la clé API: " + e.getMessage());
+        }
     }
 
     private Connection getConnection() throws SQLException {
@@ -326,6 +329,20 @@ public class DatabaseManager {
             if (ti.rowCount >= 0) sb.append("ROWS: ").append(ti.rowCount).append("\n");
             if (ti.sample != null && !ti.sample.isBlank()) sb.append("SAMPLE: \n").append(ti.sample).append("\n");
             sb.append("---\n");
+        }
+        return sb.toString().trim();
+    }
+
+    public synchronized String getTableNamesSummary() {
+        StringBuilder sb = new StringBuilder();
+        for (TableInfo ti : schemaCache.values()) {
+            if (ti == null || ti.name == null || ti.name.isBlank()) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append("\n");
+            }
+            sb.append(ti.name);
         }
         return sb.toString().trim();
     }

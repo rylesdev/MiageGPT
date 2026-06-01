@@ -36,8 +36,8 @@ public class GroqAPIService {
 
     public String getResponseWithHistory(String question, String conversationHistory) {
         try {
-            String schemaSummary = DatabaseManager.getInstance().getSchemaSummary();
-            java.util.List<String> tables = selectTablesForQuestion(schemaSummary, question);
+            String tableNames = DatabaseManager.getInstance().getTableNamesSummary();
+            java.util.List<String> tables = selectTablesForQuestion(tableNames, question);
 
             String dbContext = buildSelectedTablesContext(tables);
             if (dbContext == null || dbContext.isBlank()) {
@@ -55,8 +55,8 @@ public class GroqAPIService {
 
     public APIResponse getResponseWithHistoryAndPing(String question, String conversationHistory) {
         try {
-            String schemaSummary = DatabaseManager.getInstance().getSchemaSummary();
-            java.util.List<String> tables = selectTablesForQuestion(schemaSummary, question);
+            String tableNames = DatabaseManager.getInstance().getTableNamesSummary();
+            java.util.List<String> tables = selectTablesForQuestion(tableNames, question);
 
             String dbContext = buildSelectedTablesContext(tables);
             if (dbContext == null || dbContext.isBlank()) {
@@ -71,12 +71,12 @@ public class GroqAPIService {
         }
     }
 
-    private String createJsonRequestForTableSelection(String schemaSummary, String userQuestion) {
+    private String createJsonRequestForTableSelection(String tableNames, String userQuestion) {
         String system = "Tu es un assistant qui aide à sélectionner les tables pertinentes d'une base de données.\n" +
                 "Tu ne dois pas répondre à la question de l'utilisateur.\n" +
                 "Réponds uniquement par un objet JSON valide avec la clé \"tables\" contenant une liste de 1 à 3 noms de tables pertinentes (en minuscules), par exemple: {\"tables\":[\"membres\",\"faq\"]}.\n" +
                 "Ne fournis aucun texte hors du JSON.\n" +
-                "Voici le schéma de la base (tables, colonnes,counts,samples) :\n" + escapeJson(schemaSummary) + "\n" +
+                "Voici la liste de toutes les tables de la base :\n" + escapeJson(tableNames) + "\n" +
                 "Question de l'utilisateur: \"" + escapeJson(userQuestion) + "\"\n" +
                 "Choisis entre 1 et 3 tables maximum.\n" +
                 "Retourne uniquement le JSON requis.";
@@ -143,9 +143,9 @@ public class GroqAPIService {
         return sb.toString().trim();
     }
 
-    private java.util.List<String> selectTablesForQuestion(String schemaSummary, String question) {
+    private java.util.List<String> selectTablesForQuestion(String tableNames, String question) {
         try {
-            String json = createJsonRequestForTableSelection(schemaSummary, question);
+            String json = createJsonRequestForTableSelection(tableNames, question);
             APIResponse r = sendRequest(json);
             if (r == null || r.content == null) return java.util.Collections.emptyList();
             return parseTableSelectionResponse(r.content);

@@ -1,6 +1,7 @@
 package com.miage.miagegpt;
 
 import com.miage.miagegpt.controller.ChatController;
+import com.miage.miagegpt.model.DatabaseManager;
 import com.miage.miagegpt.service.APIKeyDialog;
 import com.miage.miagegpt.service.Config;
 import com.miage.miagegpt.view.ChatView;
@@ -16,6 +17,8 @@ public class ChatApp extends Application {
             Platform.exit();
             return;
         }
+
+        DatabaseManager.getInstance().initializeAfterApiKeyValidation();
 
         ChatController controller = new ChatController();
         ChatView view = new ChatView(controller);
