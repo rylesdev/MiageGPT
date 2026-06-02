@@ -1,6 +1,15 @@
 package com.miage.miagegpt.view;
 
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.Hyperlink;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
@@ -13,6 +22,104 @@ public class MarkdownRenderer {
 
     private static final Pattern INLINE_MD = Pattern.compile(
             "\\*\\*(.+?)\\*\\*|\\*([^*\\n]+?)\\*|`([^`\\n]+)`|(https?://[\\w\\-._~:/?#\\[\\]@!$&'()*+,;=%]+)");
+
+    public static VBox renderContainer(String text, boolean isDarkMode) {
+        VBox container = new VBox(4);
+        container.setMaxWidth(670);
+        String codeBg = isDarkMode ? "#2D2D3A" : "#F3F4F6";
+        String codeHeaderBg = isDarkMode ? "#3A3A4A" : "#E5E7EB";
+        javafx.scene.paint.Color codeFill = javafx.scene.paint.Color.web(isDarkMode ? "#93C5FD" : "#1D4ED8");
+        javafx.scene.paint.Color headerColor = javafx.scene.paint.Color.web(isDarkMode ? "#9CA3AF" : "#6B7280");
+
+        String[] lines = text.split("\n", -1);
+        boolean inCodeBlock = false;
+        StringBuilder normalText = new StringBuilder();
+        StringBuilder codeText = new StringBuilder();
+        String codeLang = "code";
+
+        for (String line : lines) {
+            if (line.startsWith("```")) {
+                if (!inCodeBlock) {
+                    if (normalText.length() > 0) {
+                        container.getChildren().add(renderFlow(normalText.toString(), isDarkMode));
+                        normalText = new StringBuilder();
+                    }
+                    codeLang = line.substring(3).trim();
+                    if (codeLang.isEmpty()) codeLang = "code";
+                    inCodeBlock = true;
+                } else {
+                    container.getChildren().add(buildCodeBlock(codeText.toString(), codeLang, isDarkMode, codeBg, codeHeaderBg, codeFill, headerColor));
+                    codeText = new StringBuilder();
+                    inCodeBlock = false;
+                }
+            } else if (inCodeBlock) {
+                if (codeText.length() > 0) codeText.append("\n");
+                codeText.append(line);
+            } else {
+                if (normalText.length() > 0) normalText.append("\n");
+                normalText.append(line);
+            }
+        }
+
+        if (normalText.length() > 0)
+            container.getChildren().add(renderFlow(normalText.toString(), isDarkMode));
+        if (inCodeBlock && codeText.length() > 0)
+            container.getChildren().add(renderFlow(codeText.toString(), isDarkMode));
+
+        return container;
+    }
+
+    private static VBox buildCodeBlock(String code, String lang, boolean isDarkMode,
+            String codeBg, String codeHeaderBg, javafx.scene.paint.Color codeFill,
+            javafx.scene.paint.Color headerColor) {
+        VBox block = new VBox(0);
+        block.setStyle("-fx-background-color: " + codeBg + "; -fx-background-radius: 6;");
+        block.setMaxWidth(650);
+
+        Label langLabel = new Label(lang);
+        langLabel.setStyle("-fx-text-fill: " + toHex(headerColor) + "; -fx-font-size: 11px; -fx-font-family: 'Monospace';");
+
+        Button copyBtn = new Button("📋 Copier");
+        copyBtn.setStyle("-fx-font-size: 10px; -fx-padding: 2 6; -fx-background-color: transparent; -fx-text-fill: "
+                + toHex(headerColor) + "; -fx-cursor: hand;");
+        copyBtn.setOnAction(e -> {
+            ClipboardContent content = new ClipboardContent();
+            content.putString(code);
+            Clipboard.getSystemClipboard().setContent(content);
+            copyBtn.setText("✓ Copié");
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(2));
+            pause.setOnFinished(ev -> copyBtn.setText("📋 Copier"));
+            pause.play();
+        });
+
+        HBox header = new HBox();
+        header.setStyle("-fx-background-color: " + codeHeaderBg + "; -fx-background-radius: 6 6 0 0; -fx-padding: 4 8;");
+        header.setAlignment(Pos.CENTER_LEFT);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        header.getChildren().addAll(langLabel, spacer, copyBtn);
+
+        TextFlow codeFlow = new TextFlow();
+        codeFlow.setStyle("-fx-padding: 8 12;");
+        codeFlow.setLineSpacing(3);
+        String[] codeLines = code.split("\n", -1);
+        for (int i = 0; i < codeLines.length; i++) {
+            javafx.scene.text.Text t = new javafx.scene.text.Text(codeLines[i]);
+            t.setFill(codeFill);
+            t.setFont(Font.font("Monospace", 13));
+            codeFlow.getChildren().add(t);
+            if (i < codeLines.length - 1)
+                codeFlow.getChildren().add(new javafx.scene.text.Text("\n"));
+        }
+
+        block.getChildren().addAll(header, codeFlow);
+        return block;
+    }
+
+    private static String toHex(javafx.scene.paint.Color c) {
+        return String.format("#%02X%02X%02X",
+                (int) (c.getRed() * 255), (int) (c.getGreen() * 255), (int) (c.getBlue() * 255));
+    }
 
     public static TextFlow renderFlow(String text, boolean isDarkMode) {
         TextFlow flow = new TextFlow();

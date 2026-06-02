@@ -35,6 +35,26 @@ public class GroqAPIService {
         this.questionAnalyzer = new QuestionAnalyzer(DatabaseManager.getInstance());
     }
 
+    private String friendlyError(Exception e) {
+        String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+        if (e instanceof java.net.SocketTimeoutException || msg.contains("timed out") || msg.contains("timeout")) {
+            return "La requête a pris trop de temps. Vérifiez votre connexion internet et réessayez.";
+        }
+        if (e instanceof java.net.UnknownHostException || msg.contains("unable to resolve") || msg.contains("no address")) {
+            return "Impossible de joindre le serveur. Vérifiez votre connexion internet.";
+        }
+        if (msg.contains("401") || msg.contains("unauthorized") || msg.contains("invalid api key")) {
+            return "Clé API invalide ou expirée. Vérifiez votre clé Groq dans les paramètres.";
+        }
+        if (msg.contains("429") || msg.contains("rate limit") || msg.contains("too many requests")) {
+            return "Limite de requêtes atteinte. Attendez quelques secondes avant de réessayer.";
+        }
+        if (msg.contains("503") || msg.contains("service unavailable") || msg.contains("502")) {
+            return "Le service Groq est temporairement indisponible. Réessayez dans un moment.";
+        }
+        return "Une erreur est survenue. Réessayez dans un instant.";
+    }
+
     public String getResponseWithHistory(String question, String conversationHistory) {
         try {
             String tableNames = DatabaseManager.getInstance().getTableNamesSummary();
@@ -50,7 +70,7 @@ public class GroqAPIService {
             APIResponse response = sendRequest(jsonBody);
             return response.content;
         } catch (Exception e) {
-            return "Erreur : " + e.getMessage();
+            return friendlyError(e);
         }
     }
 
@@ -69,7 +89,7 @@ public class GroqAPIService {
             String jsonBody = createJsonRequest(systemPrompt, trimmedHistory, question);
             return sendRequest(jsonBody);
         } catch (Exception e) {
-            return new APIResponse("Erreur : " + e.getMessage(), 0);
+            return new APIResponse(friendlyError(e), 0);
         }
     }
 
@@ -157,14 +177,28 @@ public class GroqAPIService {
         return sb.toString().trim();
     }
 
+    private static final java.util.regex.Pattern COURSE_CODE_PATTERN =
+        java.util.regex.Pattern.compile("(?i)\\b(M1-)?(INF|ISI|MM|GO|TC|AN|PRO|REC)\\d+\\b");
+
     private java.util.List<String> selectTablesForQuestion(String tableNames, String question) {
         try {
+            java.util.List<String> tables;
             String json = createJsonRequestForTableSelection(tableNames, question);
             APIResponse r = sendRequest(json);
             if (r == null || r.content == null) {
-                return java.util.Collections.emptyList();
+                tables = new java.util.ArrayList<>();
+            } else {
+                tables = new java.util.ArrayList<>(parseTableSelectionResponse(r.content));
             }
-            return parseTableSelectionResponse(r.content);
+
+            // Forcer les tables de programme si la question contient un code matière
+            if (COURSE_CODE_PATTERN.matcher(question).find()) {
+                if (!tables.contains("miage_programme_matieres")) tables.add("miage_programme_matieres");
+                if (!tables.contains("miage_formation")) tables.add("miage_formation");
+                if (!tables.contains("miage_presentation_diplome")) tables.add("miage_presentation_diplome");
+            }
+
+            return tables;
         } catch (Exception e) {
             return java.util.Collections.emptyList();
         }
@@ -342,9 +376,13 @@ public class GroqAPIService {
 
             int responseCode = connection.getResponseCode();
             if (responseCode != 200) {
-                String errorMessage = readStream(connection.getErrorStream());
                 long pingMs = System.currentTimeMillis() - startTime;
-                return new APIResponse("Erreur API (" + responseCode + "): " + errorMessage, pingMs);
+                String friendly;
+                if (responseCode == 401) friendly = "Clé API invalide ou expirée. Vérifiez votre clé Groq dans les paramètres.";
+                else if (responseCode == 429) friendly = "Limite de requêtes atteinte. Attendez quelques secondes avant de réessayer.";
+                else if (responseCode == 503 || responseCode == 502) friendly = "Le service Groq est temporairement indisponible. Réessayez dans un moment.";
+                else friendly = "Le service est momentanément indisponible (code " + responseCode + "). Réessayez dans un instant.";
+                return new APIResponse(friendly, pingMs);
             }
 
             String responseBody = readStream(connection.getInputStream());

@@ -50,6 +50,7 @@ public class ChatView {
     private Button exportBtn;
     private String lastPingValue = "Ping: --ms";
     private ConversationSidebar sidebar;
+    private javafx.stage.Stage primaryStage;
 
     private Thread currentMessageThread = null;
     private volatile boolean stopMessageDisplay = false;
@@ -59,6 +60,7 @@ public class ChatView {
     }
 
     public void initialize(Stage primaryStage) {
+        this.primaryStage = primaryStage;
         sidebar = new ConversationSidebar(
                 this::onNewChat,
                 this::onSwitchConversation,
@@ -135,7 +137,11 @@ public class ChatView {
         } catch (Exception ignored) {
         }
 
-        primaryStage.setOnCloseRequest(event -> saveAllConversations());
+        loadWindowPreferences(primaryStage);
+        primaryStage.setOnCloseRequest(event -> {
+            saveWindowPreferences(primaryStage);
+            saveAllConversations();
+        });
 
         primaryStage.show();
     }
@@ -158,7 +164,7 @@ public class ChatView {
         conversationStartTimes.put(conversationName, System.currentTimeMillis());
         conversationMessageCounts.put(conversationName, 0);
 
-        sidebar.getHistoryList().getItems().add(0, conversationName);
+        sidebar.getConversationItems().add(0, conversationName);
 
         switchConversation(conversationName);
         sidebar.refresh();
@@ -367,18 +373,18 @@ public class ChatView {
     }
 
     private void renderMarkdownInBox(VBox messageBox, Label messageLabel, String text) {
-        javafx.scene.text.TextFlow flow = MarkdownRenderer.renderFlow(text, isDarkMode);
+        VBox container = MarkdownRenderer.renderContainer(text, isDarkMode);
         int idx = messageBox.getChildren().indexOf(messageLabel);
         if (idx >= 0) {
-            messageBox.getChildren().set(idx, flow);
+            messageBox.getChildren().set(idx, container);
         }
-        messageBox.getProperties().put("textFlow", flow);
+        messageBox.getProperties().put("textFlow", container);
         messageBox.getProperties().put("markdownSource", text);
     }
 
     private void swapToLabel(VBox messageBox, Label messageLabel) {
         Object flowObj = messageBox.getProperties().get("textFlow");
-        if (flowObj instanceof javafx.scene.text.TextFlow) {
+        if (flowObj instanceof javafx.scene.Node) {
             int idx = messageBox.getChildren().indexOf(flowObj);
             if (idx >= 0) {
                 messageBox.getChildren().set(idx, messageLabel);
@@ -394,9 +400,14 @@ public class ChatView {
         }
         if (inputField != null) {
             inputField.setOnKeyPressed(e -> {
-                if (e.getCode().toString().equals("ENTER") && !e.isShiftDown()) {
+                if (e.getCode().toString().equals("ENTER")) {
+                    if (e.isShiftDown()) {
+                        int pos = inputField.getCaretPosition();
+                        inputField.insertText(pos, "\n");
+                    } else {
+                        handler.run();
+                    }
                     e.consume();
-                    handler.run();
                 }
             });
         }
@@ -439,8 +450,8 @@ public class ChatView {
         if (newName == null || newName.isBlank() || newName.equals(oldName)) return;
         if (conversations.containsKey(newName)) return;
 
-        int index = sidebar.getHistoryList().getItems().indexOf(oldName);
-        if (index >= 0) sidebar.getHistoryList().getItems().set(index, newName);
+        int index = sidebar.getConversationItems().indexOf(oldName);
+        if (index >= 0) sidebar.getConversationItems().set(index, newName);
 
         VBox conv = conversations.remove(oldName);
         LocalDateTime date = conversationDates.remove(oldName);
@@ -460,7 +471,7 @@ public class ChatView {
     }
 
     private void renameConversation(String oldName) {
-        final int MAX_NAME_LEN = 15;
+        final int MAX_NAME_LEN = 40;
 
         Dialog<String> dialog = new Dialog<>();
         dialog.setTitle("Renommer la conversation");
@@ -516,9 +527,9 @@ public class ChatView {
 
         dialog.showAndWait().ifPresent(newName -> {
             if (!newName.isEmpty() && !newName.equals(oldName)) {
-                int index = sidebar.getHistoryList().getItems().indexOf(oldName);
+                int index = sidebar.getConversationItems().indexOf(oldName);
                 if (index >= 0) {
-                    sidebar.getHistoryList().getItems().set(index, newName);
+                    sidebar.getConversationItems().set(index, newName);
                 }
 
                 VBox conv = conversations.remove(oldName);
@@ -564,7 +575,7 @@ public class ChatView {
         confirmation.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
 
-                sidebar.getHistoryList().getItems().remove(conversationName);
+                sidebar.getConversationItems().remove(conversationName);
 
                 conversations.remove(conversationName);
                 conversationDates.remove(conversationName);
@@ -573,8 +584,8 @@ public class ChatView {
                 controller.deleteConversation(conversationName);
 
                 if (currentConversation.equals(conversationName)) {
-                    if (!sidebar.getHistoryList().getItems().isEmpty()) {
-                        String newConv = sidebar.getHistoryList().getItems().get(0);
+                    if (!sidebar.getConversationItems().isEmpty()) {
+                        String newConv = sidebar.getConversationItems().get(0);
                         switchConversation(newConv);
                     } else {
 
@@ -638,8 +649,45 @@ public class ChatView {
     private void showWelcomeScreenEmptyHistory() {
 
         showWelcomeScreen();
-        sidebar.getHistoryList().getItems().clear();
+        sidebar.getConversationItems().clear();
         sidebar.refresh();
+    }
+
+    private void loadWindowPreferences(javafx.stage.Stage stage) {
+        try {
+            java.io.File f = new java.io.File(com.miage.miagegpt.service.PathResolver.getDataDir(), "window.properties");
+            if (!f.exists()) return;
+            java.util.Properties props = new java.util.Properties();
+            try (java.io.FileInputStream fis = new java.io.FileInputStream(f)) {
+                props.load(fis);
+            }
+            if (Boolean.parseBoolean(props.getProperty("maximized", "false"))) {
+                stage.setMaximized(true);
+            } else {
+                stage.setWidth(Double.parseDouble(props.getProperty("width", "1100")));
+                stage.setHeight(Double.parseDouble(props.getProperty("height", "700")));
+                double x = Double.parseDouble(props.getProperty("x", "-1"));
+                double y = Double.parseDouble(props.getProperty("y", "-1"));
+                if (x >= 0 && y >= 0) { stage.setX(x); stage.setY(y); }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void saveWindowPreferences(javafx.stage.Stage stage) {
+        try {
+            java.util.Properties props = new java.util.Properties();
+            props.setProperty("maximized", String.valueOf(stage.isMaximized()));
+            if (!stage.isMaximized()) {
+                props.setProperty("width", String.valueOf((int) stage.getWidth()));
+                props.setProperty("height", String.valueOf((int) stage.getHeight()));
+                props.setProperty("x", String.valueOf((int) stage.getX()));
+                props.setProperty("y", String.valueOf((int) stage.getY()));
+            }
+            java.io.File f = new java.io.File(com.miage.miagegpt.service.PathResolver.getDataDir(), "window.properties");
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(f)) {
+                props.store(fos, null);
+            }
+        } catch (Exception ignored) {}
     }
 
     private void attachScrollListener(VBox box) {
@@ -1000,13 +1048,13 @@ public class ChatView {
                         VBox messageBox = (VBox) child;
                         Object markdownSource = messageBox.getProperties().get("markdownSource");
                         Object textFlowObj = messageBox.getProperties().get("textFlow");
-                        if (markdownSource instanceof String && textFlowObj instanceof javafx.scene.text.TextFlow) {
-                            javafx.scene.text.TextFlow newFlow = MarkdownRenderer.renderFlow((String) markdownSource, isDarkMode);
+                        if (markdownSource instanceof String && textFlowObj instanceof javafx.scene.Node) {
+                            VBox newContainer = MarkdownRenderer.renderContainer((String) markdownSource, isDarkMode);
                             int idx = messageBox.getChildren().indexOf(textFlowObj);
                             if (idx >= 0) {
-                                messageBox.getChildren().set(idx, newFlow);
+                                messageBox.getChildren().set(idx, newContainer);
                             }
-                            messageBox.getProperties().put("textFlow", newFlow);
+                            messageBox.getProperties().put("textFlow", newContainer);
                         }
                     }
                 }
@@ -1201,7 +1249,7 @@ public class ChatView {
                     : System.currentTimeMillis();
             conversationStartTimes.put(data.name, startTime);
 
-            sidebar.getHistoryList().getItems().add(data.name);
+            sidebar.getConversationItems().add(data.name);
         }
 
     }

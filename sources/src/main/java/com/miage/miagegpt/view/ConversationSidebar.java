@@ -13,6 +13,8 @@ import java.util.function.Supplier;
 public class ConversationSidebar {
 
     private ListView<String> historyList;
+    private javafx.collections.ObservableList<String> allItems;
+    private javafx.collections.transformation.FilteredList<String> filteredItems;
     private Label connectionIndicator;
     private Label pingLabel;
     private ImageView logoView;
@@ -45,8 +47,8 @@ public class ConversationSidebar {
     public VBox build() {
         VBox sidebar = new VBox(10);
         sidebar.setPadding(new Insets(10));
-        sidebar.setMinWidth(260);
-        sidebar.setMaxWidth(260);
+        sidebar.setMinWidth(320);
+        sidebar.setMaxWidth(320);
         sidebar.getStyleClass().add("sidebar");
 
         String logoPath = isDarkMode.get() ? "/icon_logo_sombre.png" : "/icon_logo_clair.png";
@@ -97,7 +99,21 @@ public class ConversationSidebar {
         Label historyLabel = new Label("Historique");
         historyLabel.getStyleClass().add("secondary-label");
 
+        TextField searchField = new TextField();
+        searchField.setPromptText("🔍 Rechercher...");
+        searchField.setMaxWidth(Double.MAX_VALUE);
+        searchField.getStyleClass().add("input-field");
+        searchField.setStyle("-fx-font-size: 12px; -fx-padding: 5 8;");
+
+        allItems = javafx.collections.FXCollections.observableArrayList();
+        filteredItems = new javafx.collections.transformation.FilteredList<>(allItems, s -> true);
+        searchField.textProperty().addListener((obs, old, val) -> {
+            String lower = val == null ? "" : val.toLowerCase().trim();
+            filteredItems.setPredicate(lower.isEmpty() ? s -> true : s -> s.toLowerCase().contains(lower));
+        });
+
         historyList = new ListView<>();
+        historyList.setItems(filteredItems);
         historyList.getStyleClass().add("history-list");
         historyList.setCellFactory(lv -> new ListCell<String>() {
             @Override
@@ -127,7 +143,7 @@ public class ConversationSidebar {
 
                     Label textLabel = new Label(item);
                     textLabel.setStyle("-fx-text-fill: " + textColor + "; -fx-font-size: 13px;");
-                    textLabel.setMaxWidth(180);
+                    textLabel.setMaxWidth(240);
                     textLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
                     HBox.setHgrow(textLabel, Priority.ALWAYS);
 
@@ -202,7 +218,7 @@ public class ConversationSidebar {
         homeBtnContainer.getChildren().add(homeBtn);
 
         VBox.setVgrow(historyList, Priority.ALWAYS);
-        sidebar.getChildren().addAll(logoContainer, homeBtnContainer, topBar, historyLabel, historyList, bottomBar);
+        sidebar.getChildren().addAll(logoContainer, homeBtnContainer, topBar, historyLabel, searchField, historyList, bottomBar);
 
         return sidebar;
     }
@@ -237,6 +253,10 @@ public class ConversationSidebar {
 
     public ListView<String> getHistoryList() {
         return historyList;
+    }
+
+    public javafx.collections.ObservableList<String> getConversationItems() {
+        return allItems;
     }
 
     private static void addHoverEffect(Button button) {
