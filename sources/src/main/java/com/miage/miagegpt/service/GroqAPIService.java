@@ -410,6 +410,35 @@ public class GroqAPIService {
         }
     }
 
+    public String generateTitle(String firstMessage) {
+        try {
+            String prompt = "Tu génères des titres de conversations dans le style de Claude ou ChatGPT.\n"
+                    + "Règles strictes :\n"
+                    + "- Groupe nominal (pas une question, pas une phrase verbale)\n"
+                    + "- 4 à 7 mots, informatif et précis\n"
+                    + "- Commence par une majuscule\n"
+                    + "- Ne copie jamais le message mot pour mot\n"
+                    + "- En français\n"
+                    + "Exemples :\n"
+                    + "  \"c'est quoi ISI4\" → \"Signification du code ISI4 en MIAGE\"\n"
+                    + "  \"quelles sont les matières de L3\" → \"Programme et matières de la Licence 3\"\n"
+                    + "  \"comment intégrer la MIAGE\" → \"Conditions d'admission en MIAGE Paris 1\"\n"
+                    + "  \"quel est le salaire après la MIAGE\" → \"Salaires et débouchés après la MIAGE\"\n"
+                    + "  \"qui est le président de l'AMS\" → \"Membres et bureau de l'AMS\"\n"
+                    + "Message : \"" + escapeJson(firstMessage) + "\"\n"
+                    + "Titre :";
+            String json = "{\"model\": \"meta-llama/llama-4-scout-17b-16e-instruct\","
+                    + "\"messages\":[{\"role\":\"user\",\"content\":\"" + escapeJson(prompt) + "\"}],"
+                    + "\"max_tokens\":30,\"temperature\":0.6,\"top_p\":0.9}";
+            APIResponse r = sendRequest(json);
+            if (r != null && r.content != null) {
+                String title = r.content.trim().replaceAll("^[\"']+|[\"']+$", "").trim();
+                if (!title.isEmpty() && title.length() <= 60) return title;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     public boolean testConnection() {
         try {
             int code = testApiKeyStatus();

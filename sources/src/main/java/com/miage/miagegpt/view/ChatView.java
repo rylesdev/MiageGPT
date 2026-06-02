@@ -72,6 +72,7 @@ public class ChatView {
         chatBox = new VBox(20);
         chatBox.setPadding(new Insets(20));
         chatBox.getStyleClass().add("chat-box");
+        attachScrollListener(chatBox);
 
         scrollPane = new ScrollPane(chatBox);
         scrollPane.setFitToWidth(true);
@@ -414,6 +415,7 @@ public class ChatView {
             chatBox = new VBox(20);
             chatBox.setPadding(new Insets(20));
             chatBox.setStyle("-fx-background-color: rgba(8, 107, 174);");
+            attachScrollListener(chatBox);
             conversations.put(conversationName, chatBox);
             conversationDates.put(conversationName, LocalDateTime.now());
             conversationStartTimes.put(conversationName, System.currentTimeMillis());
@@ -431,6 +433,30 @@ public class ChatView {
 
         applyTheme();
         scrollToBottom();
+    }
+
+    private void applyRename(String oldName, String newName) {
+        if (newName == null || newName.isBlank() || newName.equals(oldName)) return;
+        if (conversations.containsKey(newName)) return;
+
+        int index = sidebar.getHistoryList().getItems().indexOf(oldName);
+        if (index >= 0) sidebar.getHistoryList().getItems().set(index, newName);
+
+        VBox conv = conversations.remove(oldName);
+        LocalDateTime date = conversationDates.remove(oldName);
+        String history = conversationHistory.remove(oldName);
+        Long startTime = conversationStartTimes.remove(oldName);
+        Integer msgCount = conversationMessageCounts.remove(oldName);
+
+        if (conv != null) conversations.put(newName, conv);
+        if (date != null) conversationDates.put(newName, date);
+        if (history != null) conversationHistory.put(newName, history);
+        if (startTime != null) conversationStartTimes.put(newName, startTime);
+        if (msgCount != null) conversationMessageCounts.put(newName, msgCount);
+
+        controller.renameConversation(oldName, newName, date, history, null, msgCount != null ? msgCount : 0);
+
+        if (currentConversation.equals(oldName)) currentConversation = newName;
     }
 
     private void renameConversation(String oldName) {
@@ -614,6 +640,10 @@ public class ChatView {
         showWelcomeScreen();
         sidebar.getHistoryList().getItems().clear();
         sidebar.refresh();
+    }
+
+    private void attachScrollListener(VBox box) {
+        box.heightProperty().addListener((obs, oldVal, newVal) -> scrollPane.setVvalue(1.0));
     }
 
     private void scrollToBottom() {
@@ -1014,6 +1044,19 @@ public class ChatView {
         addUserMessage(text);
         inputField.clear();
         showTypingIndicator();
+
+        // Nommage automatique sur le premier message
+        int msgCount = conversationMessageCounts.getOrDefault(currentConversation, 0);
+        if (msgCount == 1) {
+            final String convToName = currentConversation;
+            final String firstMsg = text;
+            new Thread(() -> {
+                String title = controller.generateConversationName(firstMsg);
+                if (title != null && !title.isBlank()) {
+                    javafx.application.Platform.runLater(() -> applyRename(convToName, title));
+                }
+            }).start();
+        }
 
         javafx.application.Platform.runLater(() -> {
             startSendButtonLoader();

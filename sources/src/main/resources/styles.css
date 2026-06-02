@@ -92,6 +92,77 @@
     -fx-background-color: transparent;
 }
 
+/* Suppression des warnings CSS ClassCastException (fat JAR / unnamed module) */
+
+.scroll-bar:vertical,
+.scroll-bar:horizontal {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.scroll-bar > .thumb {
+    -fx-background-color: rgba(120, 120, 120, 0.45);
+    -fx-background-radius: 4;
+    -fx-background-insets: 2;
+}
+
+.scroll-bar > .thumb:hover {
+    -fx-background-color: rgba(120, 120, 120, 0.75);
+}
+
+.scroll-bar > .increment-button,
+.scroll-bar > .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-effect: null;
+}
+
+.scroll-bar > .increment-button > .increment-arrow,
+.scroll-bar > .decrement-button > .decrement-arrow {
+    -fx-background-color: transparent;
+    -fx-shape: "";
+    -fx-padding: 0;
+    -fx-effect: null;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane > .corner,
+.list-view > .virtual-flow > .corner {
+    -fx-background-color: transparent;
+}
+
+.text-area .content,
+.text-area:focused .content {
+    -fx-background-color: transparent;
+}
+
+/* Scrollbar du chat — visible sur le côté droit */
+.chat-scroll-pane .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-pref-width: 8px;
+}
+
+.chat-scroll-pane .scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(150, 150, 150, 0.55);
+    -fx-background-radius: 4;
+    -fx-background-insets: 1;
+}
+
+.chat-scroll-pane .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: rgba(150, 150, 150, 0.85);
+}
+
+.dark-mode .chat-scroll-pane .scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(200, 200, 200, 0.35);
+}
+
+.dark-mode .chat-scroll-pane .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: rgba(200, 200, 200, 0.65);
+}
+
 /* ===== Dark mode ===== */
 
 .dark-mode { -fx-background-color: #086BAE; }
@@ -186,6 +257,16 @@
     -fx-control-inner-background: #1A456F;
 }
 
+.dark-mode .history-list .list-cell {
+    -fx-text-background-color: #1A456F;
+    -fx-background-color: #1A456F;
+    -fx-text-fill: white;
+}
+
+.dark-mode .input-field .content {
+    -fx-background-color: #40414F;
+}
+
 /* ===== Light mode ===== */
 
 .light-mode { -fx-background-color: #FFFFFF; }
@@ -278,4 +359,14 @@
 .light-mode .history-list {
     -fx-background-color: #C8C8C8;
     -fx-control-inner-background: #C8C8C8;
+}
+
+.light-mode .history-list .list-cell {
+    -fx-text-background-color: #C8C8C8;
+    -fx-background-color: #C8C8C8;
+    -fx-text-fill: #111827;
+}
+
+.light-mode .input-field .content {
+    -fx-background-color: #ECECF1;
 }

@@ -43,6 +43,10 @@ public class ChatController {
         return groqService.getSummaryResponse(history, prompt);
     }
 
+    public String generateConversationName(String firstMessage) {
+        return groqService.generateTitle(firstMessage);
+    }
+
     public boolean testConnection() {
         return groqService.testConnection();
     }
