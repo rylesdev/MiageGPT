@@ -76,7 +76,11 @@ public class DatabaseManager {
     public synchronized void initializeAfterApiKeyValidation() {
         initDatabase();
         try {
-            loadSchema();
+            // retry a few times to tolerate transient network issues
+            reloadSchemaWithRetries(3, 2000);
+            if (!schemaLoaded) {
+                System.err.println("[DB] Impossible de charger le schéma après validation de la clé API: " + (lastError != null ? lastError : "erreur inconnue"));
+            }
         } catch (Exception e) {
             System.err.println("[DB] Impossible de charger le schéma après validation de la clé API: " + e.getMessage());
         }
@@ -273,8 +277,12 @@ public class DatabaseManager {
     }
 
     private final java.util.Map<String, TableInfo> schemaCache = new java.util.LinkedHashMap<>();
+    private volatile boolean schemaLoaded = false;
+    private volatile String lastError = null;
 
     public synchronized void loadSchema() {
+        schemaLoaded = false;
+        lastError = null;
         try (Connection conn = getConnection()) {
             List<String> tables = listPublicTables(conn);
             for (String table : tables) {
@@ -300,7 +308,30 @@ public class DatabaseManager {
                 schemaCache.put(table, ti);
             }
         } catch (SQLException e) {
+            lastError = e.getMessage();
             System.err.println("[DB] Erreur loadSchema: " + e.getMessage());
+            schemaLoaded = false;
+            return;
+        }
+        schemaLoaded = true;
+    }
+
+    public synchronized boolean isSchemaLoaded() {
+        return schemaLoaded;
+    }
+
+    public synchronized String getLastError() {
+        return lastError;
+    }
+
+    public synchronized void reloadSchemaWithRetries(int attempts, int delayMs) {
+        for (int i = 0; i < attempts; i++) {
+            loadSchema();
+            if (schemaLoaded) return;
+            try {
+                Thread.sleep(delayMs);
+            } catch (InterruptedException ignored) {
+            }
         }
     }
 

@@ -763,7 +763,7 @@ public class ChatView {
         new Thread(() -> {
             try {
                 setConnectionStatus(true);
-                String summary = controller.sendMessage(summaryPrompt, history);
+                String summary = controller.summarizeConversation(history, summaryPrompt);
 
                 javafx.application.Platform.runLater(() -> {
                     hideTypingIndicator();
