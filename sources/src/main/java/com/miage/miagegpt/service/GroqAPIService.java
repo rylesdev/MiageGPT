@@ -12,6 +12,10 @@ public class GroqAPIService {
     private String apiKey;
     private static final int TIMEOUT = 30000;
     public static final int MAX_CONTEXT_MESSAGES = 6;
+
+    private static final String TABLE_PROGRAMME_MATIERES = "miage_programme_matieres";
+    private static final String TABLE_FORMATION = "miage_formation";
+    private static final String TABLE_PRESENTATION_DIPLOME = "miage_presentation_diplome";
     private QuestionAnalyzer questionAnalyzer;
 
     static {
@@ -193,9 +197,9 @@ public class GroqAPIService {
 
             // Forcer les tables de programme si la question contient un code matière
             if (COURSE_CODE_PATTERN.matcher(question).find()) {
-                if (!tables.contains("miage_programme_matieres")) tables.add("miage_programme_matieres");
-                if (!tables.contains("miage_formation")) tables.add("miage_formation");
-                if (!tables.contains("miage_presentation_diplome")) tables.add("miage_presentation_diplome");
+                if (!tables.contains(TABLE_PROGRAMME_MATIERES)) tables.add(TABLE_PROGRAMME_MATIERES);
+                if (!tables.contains(TABLE_FORMATION)) tables.add(TABLE_FORMATION);
+                if (!tables.contains(TABLE_PRESENTATION_DIPLOME)) tables.add(TABLE_PRESENTATION_DIPLOME);
             }
 
             return tables;

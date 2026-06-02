@@ -143,7 +143,7 @@ public class ConversationSidebar {
 
                     Label textLabel = new Label(item);
                     textLabel.setStyle("-fx-text-fill: " + textColor + "; -fx-font-size: 13px;");
-                    textLabel.setMaxWidth(240);
+                    textLabel.setMaxWidth(190);
                     textLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
                     HBox.setHgrow(textLabel, Priority.ALWAYS);
 
@@ -162,7 +162,7 @@ public class ConversationSidebar {
                     HBox actionBox = new HBox(5);
                     actionBox.setAlignment(Pos.CENTER_RIGHT);
                     actionBox.setVisible(false);
-                    actionBox.setManaged(false);
+                    actionBox.setManaged(true);
 
                     String baseStyle = "-fx-background-color: transparent; -fx-text-fill: #8E8EA0; -fx-font-size: 14px; -fx-padding: 2 6; -fx-cursor: hand;";
                     String renameHover = "-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 2 6; -fx-cursor: hand;";
@@ -190,14 +190,12 @@ public class ConversationSidebar {
 
                     setOnMouseEntered(e -> {
                         actionBox.setVisible(true);
-                        actionBox.setManaged(true);
                         if (!item.equals(activeConversation.get())) {
                             setStyle("-fx-background-color: " + hoverBg + "; -fx-padding: 8 10; -fx-cursor: hand;");
                         }
                     });
                     setOnMouseExited(e -> {
                         actionBox.setVisible(false);
-                        actionBox.setManaged(false);
                         if (!item.equals(activeConversation.get())) {
                             setStyle("-fx-background-color: transparent; -fx-padding: 8 10; -fx-cursor: hand;");
                         }
