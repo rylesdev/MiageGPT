@@ -22,7 +22,7 @@ public class PathResolver {
         try {
             File jarLocation = new File(PathResolver.class.getProtectionDomain().getCodeSource().getLocation().toURI());
             File jarDir = jarLocation.getParentFile();
-            File miageDataDir = new File(jarDir, "MiageGPT-Data");
+            File miageDataDir = new File(jarDir, "miagegpt_data");
             miageDataDir.mkdirs();
             dataDir = miageDataDir;
             return dataDir;
@@ -30,11 +30,11 @@ public class PathResolver {
         }
 
         File userDir = new File(System.getProperty("user.dir"));
-        File candidate = new File(userDir, "MiageGPT-Data");
+        File candidate = new File(userDir, "miagegpt_data");
         if (!candidate.exists()) {
             File parent = userDir.getParentFile();
             if (parent != null) {
-                File parentCandidate = new File(parent, "MiageGPT-Data");
+                File parentCandidate = new File(parent, "miagegpt_data");
                 if (parentCandidate.exists()) {
                     candidate = parentCandidate;
                 }
