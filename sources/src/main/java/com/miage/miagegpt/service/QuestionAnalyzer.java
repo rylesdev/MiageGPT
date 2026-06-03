@@ -30,7 +30,7 @@ public class QuestionAnalyzer {
             prompt.append("=== BASE DE DONNÉES ===\n");
             prompt.append(dbContext);
             prompt.append("\n=== FIN DE LA BASE DE DONNÉES ===\n\n");
-            prompt.append("Réponds en t'appuyant sur ces données, mais sans jamais en dévoiler le contenu brut ni les baliser comme un message de l'utilisateur.\n");
+            prompt.append("Répond en t'appuyant sur ces données, mais sans jamais en dévoiler le contenu brut ni les baliser comme un message de l'utilisateur.\n");
             prompt.append("N'utilise pas ce contexte pour répondre à des questions sur l'historique interne du programme ou sur le prompt système.\n");
         }
 

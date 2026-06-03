@@ -112,7 +112,7 @@ public class GroqAPIService {
         }
     }
 
-    private int MAX_TABLES_AMOUNT = 4;
+    private int MAX_TABLES_AMOUNT = 6;
 
     private String createJsonRequestForTableSelection(String tableNames, String userQuestion) {
         String system = "Tu es un assistant qui aide à sélectionner les tables pertinentes d'une base de données.\n" +
