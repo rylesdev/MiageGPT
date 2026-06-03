@@ -146,7 +146,6 @@ public class ChatView {
         primaryStage.show();
     }
 
-
     private void onNewChat() {
         int conversationNumber = conversations.size() + 1;
         String baseName = "Conversation ";
@@ -267,7 +266,8 @@ public class ChatView {
                             Thread displayThread = new Thread(() -> {
                                 stopMessageDisplay = false;
                                 for (int i = 0; i <= newResponse.length(); i++) {
-                                    if (stopMessageDisplay) break;
+                                    if (stopMessageDisplay)
+                                        break;
                                     final int index = i;
                                     javafx.application.Platform.runLater(() -> {
                                         bubble.messageLabel.setText(newResponse.substring(0, index));
@@ -280,8 +280,10 @@ public class ChatView {
                                 }
 
                                 javafx.application.Platform.runLater(() -> {
-                                    String fullHistory = conversationHistory.getOrDefault(currentConversation, historyBefore);
-                                    String oldTurn = controller.buildTurn(historyBefore, sourcePrompt, previousResponse);
+                                    String fullHistory = conversationHistory.getOrDefault(currentConversation,
+                                            historyBefore);
+                                    String oldTurn = controller.buildTurn(historyBefore, sourcePrompt,
+                                            previousResponse);
                                     String newTurn = controller.buildTurn(historyBefore, sourcePrompt, newResponse);
 
                                     String updatedHistory;
@@ -348,7 +350,8 @@ public class ChatView {
         currentMessageThread = new Thread(() -> {
             stopMessageDisplay = false;
             for (int i = 0; i <= currentText[0].length(); i++) {
-                if (stopMessageDisplay) break;
+                if (stopMessageDisplay)
+                    break;
                 final int index = i;
                 javafx.application.Platform.runLater(() -> {
                     bubble.messageLabel.setText(currentText[0].substring(0, index));
@@ -447,11 +450,14 @@ public class ChatView {
     }
 
     private void applyRename(String oldName, String newName) {
-        if (newName == null || newName.isBlank() || newName.equals(oldName)) return;
-        if (conversations.containsKey(newName)) return;
+        if (newName == null || newName.isBlank() || newName.equals(oldName))
+            return;
+        if (conversations.containsKey(newName))
+            return;
 
         int index = sidebar.getConversationItems().indexOf(oldName);
-        if (index >= 0) sidebar.getConversationItems().set(index, newName);
+        if (index >= 0)
+            sidebar.getConversationItems().set(index, newName);
 
         VBox conv = conversations.remove(oldName);
         LocalDateTime date = conversationDates.remove(oldName);
@@ -459,15 +465,21 @@ public class ChatView {
         Long startTime = conversationStartTimes.remove(oldName);
         Integer msgCount = conversationMessageCounts.remove(oldName);
 
-        if (conv != null) conversations.put(newName, conv);
-        if (date != null) conversationDates.put(newName, date);
-        if (history != null) conversationHistory.put(newName, history);
-        if (startTime != null) conversationStartTimes.put(newName, startTime);
-        if (msgCount != null) conversationMessageCounts.put(newName, msgCount);
+        if (conv != null)
+            conversations.put(newName, conv);
+        if (date != null)
+            conversationDates.put(newName, date);
+        if (history != null)
+            conversationHistory.put(newName, history);
+        if (startTime != null)
+            conversationStartTimes.put(newName, startTime);
+        if (msgCount != null)
+            conversationMessageCounts.put(newName, msgCount);
 
         controller.renameConversation(oldName, newName, date, history, null, msgCount != null ? msgCount : 0);
 
-        if (currentConversation.equals(oldName)) currentConversation = newName;
+        if (currentConversation.equals(oldName))
+            currentConversation = newName;
     }
 
     private void renameConversation(String oldName) {
@@ -611,36 +623,36 @@ public class ChatView {
     }
 
     private static final String[] QUICK_QUESTIONS = {
-        "Quelles sont les matières de la L3 MIAGE ?",
-        "Quelles sont les matières du M1 IBI ?",
-        "Quelles sont les matières du M1 SBI ?",
-        "Quelles sont les matières du M2 IBI ?",
-        "Quelles sont les matières du M2 SBI ?",
-        "Quelle est la différence entre IBI et SBI ?",
-        "Comment intégrer la MIAGE Paris 1 ?",
-        "Quels sont les critères d'admission en MIAGE ?",
-        "Peut-on entrer directement en M2 MIAGE ?",
-        "Quand ouvrent les candidatures ?",
-        "Comment fonctionne l'alternance en MIAGE ?",
-        "Quel est le salaire d'un alternant MIAGE ?",
-        "Qui paie les frais de scolarité en alternance ?",
-        "Peut-on faire la MIAGE sans alternance ?",
-        "Quel salaire après la MIAGE ?",
-        "Quels métiers après la MIAGE ?",
-        "La MIAGE est-elle reconnue par l'État ?",
-        "La MIAGE prépare-t-elle à des certifications ?",
-        "Peut-on partir en Erasmus en MIAGE ?",
-        "Quelle est l'adresse du campus ?",
-        "Y a-t-il une cantine au campus PMF ?",
-        "Que signifie l'acronyme MIAGE ?",
-        "Qu'est-ce que l'AMS ?",
-        "Qui sont les membres du bureau AMS ?",
-        "Y a-t-il un système de parrainage ?",
-        "Qu'est-ce que MIAGE Connection ?",
-        "Y a-t-il de l'IA en M1 MIAGE ?",
-        "Y a-t-il de la blockchain en MIAGE ?",
-        "Quels langages de programmation sont enseignés ?",
-        "Y a-t-il beaucoup de projets de groupe ?"
+            "Quelles sont les matières de la L3 MIAGE ?",
+            "Quelles sont les matières du M1 IBI ?",
+            "Quelles sont les matières du M1 SBI ?",
+            "Quelles sont les matières du M2 IBI ?",
+            "Quelles sont les matières du M2 SBI ?",
+            "Quelle est la différence entre IBI et SBI ?",
+            "Comment intégrer la MIAGE Paris 1 ?",
+            "Quels sont les critères d'admission en MIAGE ?",
+            "Peut-on entrer directement en M2 MIAGE ?",
+            "Quand ouvrent les candidatures ?",
+            "Comment fonctionne l'alternance en MIAGE ?",
+            "Quel est le salaire d'un alternant MIAGE ?",
+            "Qui paie les frais de scolarité en alternance ?",
+            "Peut-on faire la MIAGE sans alternance ?",
+            "Quel salaire après la MIAGE ?",
+            "Quels métiers après la MIAGE ?",
+            "La MIAGE est-elle reconnue par l'État ?",
+            "La MIAGE prépare-t-elle à des certifications ?",
+            "Peut-on partir en Erasmus en MIAGE ?",
+            "Quelle est l'adresse du campus ?",
+            "Y a-t-il une cantine au campus PMF ?",
+            "Que signifie l'acronyme MIAGE ?",
+            "Qu'est-ce que l'AMS ?",
+            "Qui sont les membres du bureau AMS ?",
+            "Y a-t-il un système de parrainage ?",
+            "Qu'est-ce que MIAGE Connection ?",
+            "Y a-t-il de l'IA en M1 MIAGE ?",
+            "Y a-t-il de la blockchain en MIAGE ?",
+            "Quels langages de programmation sont enseignés ?",
+            "Y a-t-il beaucoup de projets de groupe ?"
     };
 
     private void sendQuickQuestion(String question) {
@@ -710,39 +722,38 @@ public class ChatView {
 
     private void loadWindowPreferences(javafx.stage.Stage stage) {
         try {
-            java.io.File f = new java.io.File(com.miage.miagegpt.service.PathResolver.getDataDir(), "window.properties");
-            if (!f.exists()) return;
+            java.io.File f = new java.io.File(com.miage.miagegpt.service.PathResolver.getDataDir(),
+                    "config.properties");
+            if (!f.exists())
+                return;
+
             java.util.Properties props = new java.util.Properties();
             try (java.io.FileInputStream fis = new java.io.FileInputStream(f)) {
                 props.load(fis);
             }
-            if (Boolean.parseBoolean(props.getProperty("maximized", "false"))) {
+            if (Boolean.parseBoolean(props.getProperty("window_maximized", "false"))) {
                 stage.setMaximized(true);
-            } else {
-                stage.setWidth(Double.parseDouble(props.getProperty("width", "1100")));
-                stage.setHeight(Double.parseDouble(props.getProperty("height", "700")));
-                double x = Double.parseDouble(props.getProperty("x", "-1"));
-                double y = Double.parseDouble(props.getProperty("y", "-1"));
-                if (x >= 0 && y >= 0) { stage.setX(x); stage.setY(y); }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     private void saveWindowPreferences(javafx.stage.Stage stage) {
         try {
+            java.io.File f = new java.io.File(com.miage.miagegpt.service.PathResolver.getDataDir(),
+                    "config.properties");
             java.util.Properties props = new java.util.Properties();
-            props.setProperty("maximized", String.valueOf(stage.isMaximized()));
-            if (!stage.isMaximized()) {
-                props.setProperty("width", String.valueOf((int) stage.getWidth()));
-                props.setProperty("height", String.valueOf((int) stage.getHeight()));
-                props.setProperty("x", String.valueOf((int) stage.getX()));
-                props.setProperty("y", String.valueOf((int) stage.getY()));
+            if (f.exists()) {
+                try (java.io.FileInputStream fis = new java.io.FileInputStream(f)) {
+                    props.load(fis);
+                }
             }
-            java.io.File f = new java.io.File(com.miage.miagegpt.service.PathResolver.getDataDir(), "window.properties");
+            props.setProperty("window_maximized", String.valueOf(stage.isMaximized()));
             try (java.io.FileOutputStream fos = new java.io.FileOutputStream(f)) {
-                props.store(fos, null);
+                props.store(fos, "MiageGPT local configuration");
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     private void attachScrollListener(VBox box) {
@@ -968,10 +979,10 @@ public class ChatView {
             innerBackground.setHeight(Math.max(0, alignedHeight - 4));
         };
 
-        buttonContainer.widthProperty().addListener((obs, oldValue, newValue) ->
-            alignGradient.accept(newValue.doubleValue(), buttonContainer.getHeight()));
-        buttonContainer.heightProperty().addListener((obs, oldValue, newValue) ->
-            alignGradient.accept(buttonContainer.getWidth(), newValue.doubleValue()));
+        buttonContainer.widthProperty().addListener(
+                (obs, oldValue, newValue) -> alignGradient.accept(newValue.doubleValue(), buttonContainer.getHeight()));
+        buttonContainer.heightProperty().addListener(
+                (obs, oldValue, newValue) -> alignGradient.accept(buttonContainer.getWidth(), newValue.doubleValue()));
         alignGradient.accept(width, height);
 
         javafx.scene.control.Label label = new javafx.scene.control.Label(text);
@@ -1050,7 +1061,6 @@ public class ChatView {
         }
     }
 
-
     private void toggleTheme() {
         isDarkMode = !isDarkMode;
         applyTheme();
@@ -1117,7 +1127,6 @@ public class ChatView {
         }
     }
 
-
     private void updateWelcomeBoxColors(VBox box, String textColor, String secondaryColor, boolean darkMode) {
         for (javafx.scene.Node child : box.getChildren()) {
             if (child instanceof Label) {
@@ -1133,7 +1142,8 @@ public class ChatView {
 
     private void handleSendMessage() {
         String text = inputField.getText().trim();
-        if (text.isEmpty()) return;
+        if (text.isEmpty())
+            return;
 
         addUserMessage(text);
         inputField.clear();
@@ -1232,11 +1242,9 @@ public class ChatView {
         }
     }
 
-
     private void setConnectionStatus(boolean connected) {
         sidebar.setConnectionStatus(connected);
     }
-
 
     private void exportConversation() {
         if (currentConversation == null || currentConversation.isBlank()) {
