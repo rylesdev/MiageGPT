@@ -103,10 +103,6 @@ public class ChatController {
         return messages;
     }
 
-    /**
-     * Réinitialise le service Groq avec la nouvelle clé API enregistrée dans
-     * Config.
-     */
     public void reinitializeGroqService() {
         groqService.updateApiKey(Config.getGROQ_API_KEY());
     }

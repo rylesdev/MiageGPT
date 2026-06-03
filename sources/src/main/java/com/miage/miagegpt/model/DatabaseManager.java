@@ -76,7 +76,6 @@ public class DatabaseManager {
     public synchronized void initializeAfterApiKeyValidation() {
         initDatabase();
         try {
-            // retry a few times to tolerate transient network issues
             reloadSchemaWithRetries(3, 2000);
             if (!schemaLoaded) {
                 System.err.println("[DB] Impossible de charger le schéma après validation de la clé API: " + (lastError != null ? lastError : "erreur inconnue"));

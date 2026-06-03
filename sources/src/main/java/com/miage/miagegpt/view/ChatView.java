@@ -84,17 +84,14 @@ public class ChatView {
 
         dateTimeLabel = new Label();
         dateTimeLabel.getStyleClass().add("header-secondary-label");
-        // AJOUT : Libérer l'espace quand c'est caché
         dateTimeLabel.managedProperty().bind(dateTimeLabel.visibleProperty());
         updateDateTimeLabel();
 
         statsLabel = new Label();
         statsLabel.getStyleClass().add("header-secondary-label");
-        // AJOUT : Libérer l'espace quand c'est caché
         statsLabel.managedProperty().bind(statsLabel.visibleProperty());
 
         summarizeBtn = createGradientButton("✨ Résumer la conversation", this::summarizeConversation);
-        // AJOUT : Libérer l'espace quand c'est caché
         summarizeBtn.managedProperty().bind(summarizeBtn.visibleProperty());
         HBox.setMargin(summarizeBtn, new Insets(0, 0, 0, 20));
 
@@ -119,15 +116,11 @@ public class ChatView {
         changeApiKeyBtn.setStyle("-fx-background-color: #DC2626; -fx-text-fill: white;");
         changeApiKeyBtn.setOnAction(e -> openApiKeyConfigWindow());
         changeApiKeyBtn.setVisible(false);
-        // AJOUT : Libérer l'espace quand c'est caché
         changeApiKeyBtn.managedProperty().bind(changeApiKeyBtn.visibleProperty());
         addHoverScaleEffect(changeApiKeyBtn);
         this.changeApiKeyBtn = changeApiKeyBtn;
         HBox.setMargin(changeApiKeyBtn, new Insets(0, 8, 0, 0));
 
-        // MODIFICATION : Placer le spacer EN PREMIER, pour que tout le reste soit
-        // poussé à droite
-        // à côté du bouton de thème.
         header.getChildren().addAll(dateTimeLabel, summarizeBtn, statsLabel, spacer, changeApiKeyBtn, themeToggleBtn);
         centerPane = new BorderPane();
         centerPane.setTop(header);
@@ -457,12 +450,10 @@ public class ChatView {
         updateDateTimeLabel();
         updateStatsLabel();
 
-        // MODIFICATION : On affiche les infos de la conversation
         dateTimeLabel.setVisible(true);
         statsLabel.setVisible(true);
         summarizeBtn.setVisible(true);
 
-        // On cache le bouton Clé API
         changeApiKeyBtn.setVisible(false);
 
         applyTheme();
@@ -474,10 +465,6 @@ public class ChatView {
             return;
         if (conversations.containsKey(newName))
             return;
-
-        int index = sidebar.getConversationItems().indexOf(oldName);
-        if (index >= 0)
-            sidebar.getConversationItems().set(index, newName);
 
         VBox conv = conversations.remove(oldName);
         LocalDateTime date = conversationDates.remove(oldName);
@@ -498,8 +485,16 @@ public class ChatView {
 
         controller.renameConversation(oldName, newName, date, history, null, msgCount != null ? msgCount : 0);
 
-        if (currentConversation.equals(oldName))
+        if (currentConversation != null && currentConversation.equals(oldName)) {
             currentConversation = newName;
+        }
+
+        int index = sidebar.getConversationItems().indexOf(oldName);
+        if (index >= 0) {
+            sidebar.getConversationItems().set(index, newName);
+        }
+
+        sidebar.refresh();
     }
 
     private void renameConversation(String oldName) {
@@ -726,12 +721,10 @@ public class ChatView {
         welcomeBox.getChildren().addAll(icon, title, subtitle, questionsLabel, quickPane);
         scrollPane.setContent(welcomeBox);
 
-        // MODIFICATION : On cache complètement ces éléments
         dateTimeLabel.setVisible(false);
         statsLabel.setVisible(false);
         summarizeBtn.setVisible(false);
 
-        // On affiche le bouton Clé API
         changeApiKeyBtn.setVisible(true);
     }
 
@@ -741,11 +734,9 @@ public class ChatView {
         String newKey = ChatApp.showApiKeyDialog(primaryStage);
 
         if (newKey != null) {
-            // Nouvelle clé valide → on met à jour et on réaffiche
             Config.setGROQ_API_KEY(newKey);
             controller.reinitializeGroqService();
         }
-        // Dans tous les cas (annulé ou nouvelle clé), on réaffiche MiageGPT
         primaryStage.show();
     }
 
@@ -1189,7 +1180,6 @@ public class ChatView {
         inputField.clear();
         showTypingIndicator();
 
-        // Nommage automatique sur le premier message
         int msgCount = conversationMessageCounts.getOrDefault(currentConversation, 0);
         if (msgCount == 1) {
             final String convToName = currentConversation;

@@ -471,7 +471,6 @@ public class GroqAPIService {
                     + "Règles strictes :\n"
                     + "- Groupe nominal (pas une question, pas une phrase verbale)\n"
                     + "- 2 à 5 mots, informatif et précis\n"
-                    + "- Commence par une majuscule\n"
                     + "- Ne copie jamais le message mot pour mot\n"
                     + "- En français\n"
                     + "Message : \"" + escapeJson(firstMessage) + "\"\n"

@@ -237,7 +237,13 @@ public class ConversationSidebar {
     }
 
     public void refresh() {
-        if (historyList != null) historyList.refresh();
+        if (historyList != null) {
+            historyList.refresh();
+            String active = activeConversation.get();
+            if (active != null) {
+                historyList.getSelectionModel().select(active);
+            }
+        }
     }
 
     public void updateLogo(boolean darkMode) {

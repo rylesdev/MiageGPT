@@ -15,7 +15,6 @@ public class ChatApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         if (Config.isApiKeyConfigured()) {
-            // Clé déjà enregistrée : tester en arrière-plan
             String savedKey = Config.getGROQ_API_KEY();
             Thread bgThread = new Thread(() -> {
                 boolean valid = false;
@@ -30,11 +29,9 @@ public class ChatApp extends Application {
                 final boolean keyValid = valid;
                 Platform.runLater(() -> {
                     if (keyValid) {
-                        // Clé valide → on charge la BD et on ouvre MiageGPT directement
                         DatabaseManager.getInstance().initializeAfterApiKeyValidation();
                         openChatView(primaryStage, null);
                     } else {
-                        // Clé invalide → fenêtre de config
                         String newKey = showApiKeyDialog(primaryStage);
                         if (newKey != null) {
                             Config.setGROQ_API_KEY(newKey);
@@ -49,7 +46,6 @@ public class ChatApp extends Application {
             bgThread.setDaemon(true);
             bgThread.start();
         } else {
-            // Pas de clé → fenêtre de config
             String apiKey = showApiKeyDialog(primaryStage);
             if (apiKey != null) {
                 Config.setGROQ_API_KEY(apiKey);
@@ -61,10 +57,6 @@ public class ChatApp extends Application {
         }
     }
 
-    /**
-     * Ouvre la fenêtre de configuration de la clé API.
-     * Retourne la nouvelle clé si validée, null si annulé.
-     */
     public static String showApiKeyDialog(Stage owner) {
         APIKeyDialog dialog = new APIKeyDialog(owner);
         if (Config.isApiKeyConfigured()) {
@@ -74,11 +66,6 @@ public class ChatApp extends Application {
         }
     }
 
-    /**
-     * Construit et affiche la ChatView.
-     * Si chatViewHolder n'est pas null, on y stocke la référence (pour permettre
-     * à l'écran d'accueil de rouvrir la fenêtre de config).
-     */
     public static void openChatView(Stage primaryStage, ChatView[] chatViewHolder) {
         ChatController controller = new ChatController();
         ChatView view = new ChatView(controller);
