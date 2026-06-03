@@ -9,7 +9,7 @@ out/
 # =====================
 # Local database / secrets
 # =====================
-MiageGPT-Data/
+miagegpt_data/
 
 # =====================
 # Logs
