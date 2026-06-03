@@ -12,7 +12,7 @@ import java.util.*;
 
 public class ChatController {
 
-    private final GroqAPIService groqService;
+    private GroqAPIService groqService;
     private final ConversationManager conversationManager;
 
     public ChatController() {
@@ -106,5 +106,12 @@ public class ChatController {
             messages.add(new String[] { currentRole, currentMessage.toString() });
         }
         return messages;
+    }
+
+    /**
+     * Réinitialise le service Groq avec la nouvelle clé API enregistrée dans Config.
+     */
+    public void reinitializeGroqService() {
+        groqService.updateApiKey(Config.getGROQ_API_KEY());
     }
 }

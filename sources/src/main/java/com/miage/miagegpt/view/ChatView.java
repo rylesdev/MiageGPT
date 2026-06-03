@@ -13,13 +13,13 @@ import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-import javafx.stage.FileChooser;
-import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.miage.miagegpt.ChatApp;
+import com.miage.miagegpt.service.Config;
 
 public class ChatView {
     private VBox chatBox;
@@ -38,6 +38,7 @@ public class ChatView {
     private javafx.scene.layout.StackPane summarizeBtn;
     private TextArea inputField;
     private Button sendBtn;
+    private Button changeApiKeyBtn;
 
     private Map<String, String> conversationHistory = new HashMap<>();
 
@@ -47,7 +48,6 @@ public class ChatView {
     private boolean isDarkMode = false;
     private Button themeToggleBtn;
     private ChatController controller;
-    private Button exportBtn;
     private String lastPingValue = "Ping: --ms";
     private ConversationSidebar sidebar;
     private javafx.stage.Stage primaryStage;
@@ -90,13 +90,8 @@ public class ChatView {
         statsLabel.getStyleClass().add("header-secondary-label");
 
         summarizeBtn = createGradientButton("✨ Résumer la conversation", this::summarizeConversation);
-        HBox.setMargin(summarizeBtn, new Insets(0, 0, 0, 42));
+        HBox.setMargin(summarizeBtn, new Insets(0, 0, 0, 20));
 
-        exportBtn = new Button("💾 Exporter");
-        exportBtn.setOnAction(e -> exportConversation());
-        exportBtn.getStyleClass().add("export-btn");
-        addHoverScaleEffect(exportBtn);
-        HBox.setMargin(exportBtn, new Insets(0, 0, 0, 16));
         HBox.setMargin(statsLabel, new Insets(0, 0, 0, 24));
 
         themeToggleBtn = new Button();
@@ -111,9 +106,16 @@ public class ChatView {
         header.getStyleClass().add("header-bar");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        header.getChildren().addAll(dateTimeLabel, summarizeBtn, exportBtn, statsLabel, spacer,
-                themeToggleBtn);
-
+        Button changeApiKeyBtn = new Button("🔑 Clé API");
+        changeApiKeyBtn.getStyleClass().addAll("theme-toggle");
+        changeApiKeyBtn.setStyle("-fx-background-color: #DC2626; -fx-text-fill: white;");
+        changeApiKeyBtn.setOnAction(e -> openApiKeyConfigWindow());
+        changeApiKeyBtn.setVisible(false);
+        addHoverScaleEffect(changeApiKeyBtn);
+        this.changeApiKeyBtn = changeApiKeyBtn;
+        HBox.setMargin(changeApiKeyBtn, new Insets(0, 8, 0, 0));
+        header.getChildren().addAll(dateTimeLabel, summarizeBtn, statsLabel, spacer,
+                changeApiKeyBtn, themeToggleBtn);
         centerPane = new BorderPane();
         centerPane.setTop(header);
         centerPane.setCenter(scrollPane);
@@ -443,7 +445,7 @@ public class ChatView {
         updateStatsLabel();
 
         summarizeBtn.setVisible(true);
-        exportBtn.setVisible(true);
+        changeApiKeyBtn.setVisible(false);
 
         applyTheme();
         scrollToBottom();
@@ -710,7 +712,21 @@ public class ChatView {
         statsLabel.setText("");
 
         summarizeBtn.setVisible(false);
-        exportBtn.setVisible(false);
+        changeApiKeyBtn.setVisible(true);
+    }
+
+    private void openApiKeyConfigWindow() {
+        primaryStage.hide();
+
+        String newKey = ChatApp.showApiKeyDialog(primaryStage);
+
+        if (newKey != null) {
+            // Nouvelle clé valide → on met à jour et on réaffiche
+            Config.setGROQ_API_KEY(newKey);
+            controller.reinitializeGroqService();
+        }
+        // Dans tous les cas (annulé ou nouvelle clé), on réaffiche MiageGPT
+        primaryStage.show();
     }
 
     private void showWelcomeScreenEmptyHistory() {
@@ -734,6 +750,9 @@ public class ChatView {
             if (Boolean.parseBoolean(props.getProperty("window_maximized", "false"))) {
                 stage.setMaximized(true);
             }
+            isDarkMode = Boolean.parseBoolean(props.getProperty("dark_mode", "false"));
+            applyTheme();
+            updateThemeButtonLabel();
         } catch (Exception ignored) {
         }
     }
@@ -749,6 +768,7 @@ public class ChatView {
                 }
             }
             props.setProperty("window_maximized", String.valueOf(stage.isMaximized()));
+            props.setProperty("dark_mode", String.valueOf(isDarkMode));
             try (java.io.FileOutputStream fos = new java.io.FileOutputStream(f)) {
                 props.store(fos, "MiageGPT local configuration");
             }
@@ -1244,46 +1264,6 @@ public class ChatView {
 
     private void setConnectionStatus(boolean connected) {
         sidebar.setConnectionStatus(connected);
-    }
-
-    private void exportConversation() {
-        if (currentConversation == null || currentConversation.isBlank()) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Aucune conversation sélectionnée");
-            alert.setHeaderText("Sélectionnez une conversation à exporter");
-            alert.showAndWait();
-            return;
-        }
-
-        try {
-            String fileName = currentConversation.replaceAll("[^a-zA-Z0-9]", "_") + ".txt";
-
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Enregistrer la conversation");
-            fileChooser.setInitialFileName(fileName);
-            fileChooser.getExtensionFilters().addAll(
-                    new FileChooser.ExtensionFilter("Fichiers texte", "*.txt"),
-                    new FileChooser.ExtensionFilter("Tous les fichiers", "*.*"));
-
-            File selectedFile = fileChooser.showSaveDialog(root.getScene().getWindow());
-            if (selectedFile == null) {
-                return;
-            }
-
-            controller.exportConversation(currentConversation, selectedFile);
-
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Export réussi");
-            alert.setHeaderText("Conversation exportée");
-            alert.setContentText("Fichier sauvegardé dans:\n" + selectedFile.getAbsolutePath());
-            alert.showAndWait();
-        } catch (Exception e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Erreur d'export");
-            alert.setHeaderText("Impossible d'exporter la conversation");
-            alert.setContentText(e.getMessage());
-            alert.showAndWait();
-        }
     }
 
     private void loadSavedConversations() {

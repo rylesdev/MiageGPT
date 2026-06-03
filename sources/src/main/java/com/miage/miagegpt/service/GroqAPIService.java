@@ -43,6 +43,10 @@ public class GroqAPIService {
         this.questionAnalyzer = new QuestionAnalyzer(DatabaseManager.getInstance());
     }
 
+    public void updateApiKey(String newApiKey) {
+        this.apiKey = newApiKey;
+    }
+
     private String friendlyError(Exception e) {
         String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
         if (e instanceof java.net.SocketTimeoutException || msg.contains("timed out") || msg.contains("timeout")) {
