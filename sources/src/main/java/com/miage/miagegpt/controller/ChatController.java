@@ -24,18 +24,10 @@ public class ChatController {
     }
 
     public APIResponse sendMessageWithPing(String text, String history) {
-        APIResponse directAnswer = handleConversationHistoryQuestion(text, history);
-        if (directAnswer != null) {
-            return directAnswer;
-        }
         return groqService.getResponseWithHistoryAndPing(text, history);
     }
 
     public String sendMessage(String text, String history) {
-        APIResponse directAnswer = handleConversationHistoryQuestion(text, history);
-        if (directAnswer != null) {
-            return directAnswer.content;
-        }
         return groqService.getResponseWithHistory(text, history);
     }
 
@@ -56,7 +48,7 @@ public class ChatController {
     }
 
     public void saveConversation(String name, LocalDateTime date, String history,
-                                 String language, int messageCount) {
+            String language, int messageCount) {
         conversationManager.saveConversation(name, date, history, language, messageCount);
     }
 
@@ -65,7 +57,7 @@ public class ChatController {
     }
 
     public void renameConversation(String oldName, String newName, LocalDateTime date,
-                                   String history, String language, int messageCount) {
+            String history, String language, int messageCount) {
         conversationManager.renameConversation(oldName, newName, date, history, language, messageCount);
     }
 
@@ -84,7 +76,8 @@ public class ChatController {
 
     public List<String[]> parseHistory(String history) {
         List<String[]> messages = new ArrayList<>();
-        if (history == null || history.isEmpty()) return messages;
+        if (history == null || history.isEmpty())
+            return messages;
 
         String[] lines = history.split("\\n");
         String currentRole = null;
@@ -93,13 +86,13 @@ public class ChatController {
         for (String line : lines) {
             if (line.startsWith("User: ")) {
                 if (currentRole != null) {
-                    messages.add(new String[]{currentRole, currentMessage.toString()});
+                    messages.add(new String[] { currentRole, currentMessage.toString() });
                 }
                 currentRole = "user";
                 currentMessage = new StringBuilder(line.substring(6));
             } else if (line.startsWith("MiageGPT: ")) {
                 if (currentRole != null) {
-                    messages.add(new String[]{currentRole, currentMessage.toString()});
+                    messages.add(new String[] { currentRole, currentMessage.toString() });
                 }
                 currentRole = "assistant";
                 currentMessage = new StringBuilder(line.substring(10));
@@ -110,44 +103,8 @@ public class ChatController {
             }
         }
         if (currentRole != null) {
-            messages.add(new String[]{currentRole, currentMessage.toString()});
+            messages.add(new String[] { currentRole, currentMessage.toString() });
         }
         return messages;
-    }
-
-    private APIResponse handleConversationHistoryQuestion(String question, String history) {
-        if (!isFirstMessageQuestion(question)) {
-            return null;
-        }
-
-        List<String[]> messages = parseHistory(history);
-        if (messages.size() > GroqAPIService.MAX_CONTEXT_MESSAGES) {
-            return new APIResponse(
-                    "Je ne peux pas retrouver ce message parce qu'il est hors de la fenêtre de contexte actuelle.",
-                    0);
-        }
-
-        for (String[] message : messages) {
-            if (message.length >= 2 && "user".equals(message[0]) && message[1] != null && !message[1].isBlank()) {
-                String answer = "Ton premier message utilisateur était :\n\n\"" + message[1] + "\"";
-                return new APIResponse(answer, 0);
-            }
-        }
-
-        return new APIResponse("Je n'ai pas assez d'historique pour retrouver le premier message utilisateur.", 0);
-    }
-
-    private boolean isFirstMessageQuestion(String question) {
-        if (question == null || question.isBlank()) {
-            return false;
-        }
-
-        String normalized = question.toLowerCase(Locale.ROOT);
-        return normalized.contains("premier message")
-                || normalized.contains("première message")
-                || normalized.contains("first message")
-                || normalized.contains("what was my first message")
-                || normalized.contains("quel est le premier message")
-                || normalized.contains("quel était mon premier message");
     }
 }

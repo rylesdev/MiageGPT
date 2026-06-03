@@ -130,8 +130,8 @@ public class ChatView {
 
         Scene scene = new Scene(root, 1100, 700);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        primaryStage.setTitle("MiageGPT");
-        primaryStage.setScene(scene);
+        this.primaryStage.setTitle("MiageGPT");
+        this.primaryStage.setScene(scene);
         try {
             primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/icon_texte.png")));
         } catch (Exception ignored) {
