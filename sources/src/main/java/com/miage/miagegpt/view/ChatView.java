@@ -610,6 +610,21 @@ public class ChatView {
         }
     }
 
+    private static final String[] QUICK_QUESTIONS = {
+        "Quelles sont les matières de la L3 MIAGE ?",
+        "Comment intégrer la MIAGE Paris 1 ?",
+        "Quelle est la différence entre IBI et SBI ?",
+        "Quel salaire après la MIAGE ?",
+        "Comment fonctionne l'alternance ?",
+        "Qui sont les membres du bureau AMS ?"
+    };
+
+    private void sendQuickQuestion(String question) {
+        onNewChat();
+        inputField.setText(question);
+        handleSendMessage();
+    }
+
     private void showWelcomeScreen() {
         String bgColor = isDarkMode ? "rgba(8, 107, 174)" : "#FFFFFF";
         String textColor = isDarkMode ? "white" : "#1F2937";
@@ -617,7 +632,7 @@ public class ChatView {
 
         welcomeBox = new VBox(25);
         welcomeBox.setAlignment(Pos.CENTER);
-        welcomeBox.setPadding(new Insets(100));
+        welcomeBox.setPadding(new Insets(60, 100, 60, 100));
         welcomeBox.setStyle("-fx-background-color: " + bgColor + ";");
 
         Label title = new Label("Bienvenue sur MiageGPT");
@@ -627,16 +642,30 @@ public class ChatView {
         Label subtitle = new Label("Ton assistant dédié à la MIAGE et à l'AMS");
         subtitle.setFont(Font.font("System", 26));
         subtitle.setStyle("-fx-text-fill: " + secondaryColor + ";");
-
-        Label hint = new Label("Crée une nouvelle conversation pour commencer");
-        hint.setFont(Font.font("System", 16));
-        hint.setStyle("-fx-text-fill: " + secondaryColor + ";");
+        subtitle.setUserData("secondary");
 
         javafx.scene.text.Text icon = new javafx.scene.text.Text("💬");
         icon.setFont(Font.font("System", 100));
         icon.setFill(isDarkMode ? javafx.scene.paint.Color.WHITE : javafx.scene.paint.Color.web("#111827"));
 
-        welcomeBox.getChildren().addAll(icon, title, subtitle, hint);
+        Label questionsLabel = new Label("Commence par une question :");
+        questionsLabel.setFont(Font.font("System", 15));
+        questionsLabel.setStyle("-fx-text-fill: " + secondaryColor + ";");
+        questionsLabel.setUserData("secondary");
+
+        javafx.scene.layout.FlowPane quickPane = new javafx.scene.layout.FlowPane(10, 10);
+        quickPane.setAlignment(Pos.CENTER);
+        quickPane.setMaxWidth(720);
+
+        for (String q : QUICK_QUESTIONS) {
+            Button btn = new Button(q);
+            btn.getStyleClass().add("quick-question-btn");
+            btn.setOnAction(e -> sendQuickQuestion(q));
+            addHoverScaleEffect(btn);
+            quickPane.getChildren().add(btn);
+        }
+
+        welcomeBox.getChildren().addAll(icon, title, subtitle, questionsLabel, quickPane);
         scrollPane.setContent(welcomeBox);
 
         dateTimeLabel.setText("");
@@ -1064,24 +1093,15 @@ public class ChatView {
 
 
     private void updateWelcomeBoxColors(VBox box, String textColor, String secondaryColor, boolean darkMode) {
-        int index = 0;
         for (javafx.scene.Node child : box.getChildren()) {
             if (child instanceof Label) {
                 Label label = (Label) child;
-                boolean isLast = index == box.getChildren().size() - 1;
-                String color = isLast ? secondaryColor : textColor;
-                String currentStyle = label.getStyle();
-
-                if (currentStyle.contains("-fx-font-size")) {
-                    label.setStyle("-fx-text-fill: " + color + ";");
-                } else {
-                    label.setStyle("-fx-text-fill: " + color + ";");
-                }
+                String color = "secondary".equals(label.getUserData()) ? secondaryColor : textColor;
+                label.setStyle("-fx-text-fill: " + color + ";");
             } else if (child instanceof javafx.scene.text.Text) {
                 javafx.scene.text.Text text = (javafx.scene.text.Text) child;
                 text.setFill(darkMode ? javafx.scene.paint.Color.WHITE : javafx.scene.paint.Color.web("#111827"));
             }
-            index++;
         }
     }
 

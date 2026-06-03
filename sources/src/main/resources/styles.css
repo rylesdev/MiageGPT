@@ -370,3 +370,39 @@
 .light-mode .input-field .content {
     -fx-background-color: #ECECF1;
 }
+
+/* ===== Quick question buttons (welcome screen) ===== */
+
+.dark-mode .quick-question-btn {
+    -fx-background-color: #2A2B32;
+    -fx-text-fill: #ECECF1;
+    -fx-font-size: 13px;
+    -fx-padding: 10 18;
+    -fx-cursor: hand;
+    -fx-border-color: #565869;
+    -fx-border-width: 1;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+}
+
+.dark-mode .quick-question-btn:hover {
+    -fx-background-color: #40414F;
+    -fx-border-color: #8E8EA0;
+}
+
+.light-mode .quick-question-btn {
+    -fx-background-color: #F3F4F6;
+    -fx-text-fill: #111827;
+    -fx-font-size: 13px;
+    -fx-padding: 10 18;
+    -fx-cursor: hand;
+    -fx-border-color: #D1D5DB;
+    -fx-border-width: 1;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+}
+
+.light-mode .quick-question-btn:hover {
+    -fx-background-color: #E5E7EB;
+    -fx-border-color: #9CA3AF;
+}
