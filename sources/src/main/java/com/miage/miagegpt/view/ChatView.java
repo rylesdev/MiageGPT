@@ -612,11 +612,35 @@ public class ChatView {
 
     private static final String[] QUICK_QUESTIONS = {
         "Quelles sont les matières de la L3 MIAGE ?",
-        "Comment intégrer la MIAGE Paris 1 ?",
+        "Quelles sont les matières du M1 IBI ?",
+        "Quelles sont les matières du M1 SBI ?",
+        "Quelles sont les matières du M2 IBI ?",
+        "Quelles sont les matières du M2 SBI ?",
         "Quelle est la différence entre IBI et SBI ?",
+        "Comment intégrer la MIAGE Paris 1 ?",
+        "Quels sont les critères d'admission en MIAGE ?",
+        "Peut-on entrer directement en M2 MIAGE ?",
+        "Quand ouvrent les candidatures ?",
+        "Comment fonctionne l'alternance en MIAGE ?",
+        "Quel est le salaire d'un alternant MIAGE ?",
+        "Qui paie les frais de scolarité en alternance ?",
+        "Peut-on faire la MIAGE sans alternance ?",
         "Quel salaire après la MIAGE ?",
-        "Comment fonctionne l'alternance ?",
-        "Qui sont les membres du bureau AMS ?"
+        "Quels métiers après la MIAGE ?",
+        "La MIAGE est-elle reconnue par l'État ?",
+        "La MIAGE prépare-t-elle à des certifications ?",
+        "Peut-on partir en Erasmus en MIAGE ?",
+        "Quelle est l'adresse du campus ?",
+        "Y a-t-il une cantine au campus PMF ?",
+        "Que signifie l'acronyme MIAGE ?",
+        "Qu'est-ce que l'AMS ?",
+        "Qui sont les membres du bureau AMS ?",
+        "Y a-t-il un système de parrainage ?",
+        "Qu'est-ce que MIAGE Connection ?",
+        "Y a-t-il de l'IA en M1 MIAGE ?",
+        "Y a-t-il de la blockchain en MIAGE ?",
+        "Quels langages de programmation sont enseignés ?",
+        "Y a-t-il beaucoup de projets de groupe ?"
     };
 
     private void sendQuickQuestion(String question) {
@@ -657,7 +681,9 @@ public class ChatView {
         quickPane.setAlignment(Pos.CENTER);
         quickPane.setMaxWidth(720);
 
-        for (String q : QUICK_QUESTIONS) {
+        java.util.List<String> pool = new java.util.ArrayList<>(java.util.Arrays.asList(QUICK_QUESTIONS));
+        java.util.Collections.shuffle(pool);
+        for (String q : pool.subList(0, 6)) {
             Button btn = new Button(q);
             btn.getStyleClass().add("quick-question-btn");
             btn.setOnAction(e -> sendQuickQuestion(q));
