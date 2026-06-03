@@ -6,7 +6,6 @@ import com.miage.miagegpt.service.APIResponse;
 import com.miage.miagegpt.service.Config;
 import com.miage.miagegpt.service.GroqAPIService;
 
-import java.io.File;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -105,7 +104,8 @@ public class ChatController {
     }
 
     /**
-     * Réinitialise le service Groq avec la nouvelle clé API enregistrée dans Config.
+     * Réinitialise le service Groq avec la nouvelle clé API enregistrée dans
+     * Config.
      */
     public void reinitializeGroqService() {
         groqService.updateApiKey(Config.getGROQ_API_KEY());
