@@ -760,17 +760,6 @@ public class ChatView {
             }
             if (Boolean.parseBoolean(props.getProperty("window_maximized", "false"))) {
                 stage.setMaximized(true);
-            } else {
-                double w = Double.parseDouble(props.getProperty("window_width", "1100"));
-                double h = Double.parseDouble(props.getProperty("window_height", "700"));
-                double x = Double.parseDouble(props.getProperty("window_x", "-1"));
-                double y = Double.parseDouble(props.getProperty("window_y", "-1"));
-                stage.setWidth(w);
-                stage.setHeight(h);
-                if (x >= 0 && y >= 0) {
-                    stage.setX(x);
-                    stage.setY(y);
-                }
             }
             isDarkMode = Boolean.parseBoolean(props.getProperty("dark_mode", "false"));
             applyTheme();
@@ -790,12 +779,6 @@ public class ChatView {
                 }
             }
             props.setProperty("window_maximized", String.valueOf(stage.isMaximized()));
-            if (!stage.isMaximized()) {
-                props.setProperty("window_width", String.valueOf((int) stage.getWidth()));
-                props.setProperty("window_height", String.valueOf((int) stage.getHeight()));
-                props.setProperty("window_x", String.valueOf((int) stage.getX()));
-                props.setProperty("window_y", String.valueOf((int) stage.getY()));
-            }
             props.setProperty("dark_mode", String.valueOf(isDarkMode));
             try (java.io.FileOutputStream fos = new java.io.FileOutputStream(f)) {
                 props.store(fos, "MiageGPT local configuration");
