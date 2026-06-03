@@ -1,7 +1,3 @@
-/* ===== MiageGPT Stylesheet ===== */
-
-/* Static (theme-independent) */
-
 .user-author {
     -fx-text-fill: #19C37D;
     -fx-font-weight: bold;
@@ -92,45 +88,43 @@
     -fx-background-color: transparent;
 }
 
-/* Suppression des warnings CSS ClassCastException (fat JAR / unnamed module) */
-
 .scroll-bar:vertical,
 .scroll-bar:horizontal {
     -fx-background-color: transparent;
     -fx-padding: 0;
 }
 
-.scroll-bar > .thumb {
+.scroll-bar>.thumb {
     -fx-background-color: rgba(120, 120, 120, 0.45);
     -fx-background-radius: 4;
     -fx-background-insets: 2;
 }
 
-.scroll-bar > .thumb:hover {
+.scroll-bar>.thumb:hover {
     -fx-background-color: rgba(120, 120, 120, 0.75);
 }
 
-.scroll-bar > .increment-button,
-.scroll-bar > .decrement-button {
+.scroll-bar>.increment-button,
+.scroll-bar>.decrement-button {
     -fx-background-color: transparent;
     -fx-padding: 0;
     -fx-effect: null;
 }
 
-.scroll-bar > .increment-button > .increment-arrow,
-.scroll-bar > .decrement-button > .decrement-arrow {
+.scroll-bar>.increment-button>.increment-arrow,
+.scroll-bar>.decrement-button>.decrement-arrow {
     -fx-background-color: transparent;
     -fx-shape: "";
     -fx-padding: 0;
     -fx-effect: null;
 }
 
-.scroll-pane > .viewport {
+.scroll-pane>.viewport {
     -fx-background-color: transparent;
 }
 
-.scroll-pane > .corner,
-.list-view > .virtual-flow > .corner {
+.scroll-pane>.corner,
+.list-view>.virtual-flow>.corner {
     -fx-background-color: transparent;
 }
 
@@ -139,7 +133,6 @@
     -fx-background-color: transparent;
 }
 
-/* Scrollbar du chat — visible sur le côté droit */
 .chat-scroll-pane .scroll-bar:vertical {
     -fx-background-color: transparent;
     -fx-pref-width: 8px;
@@ -163,18 +156,38 @@
     -fx-background-color: rgba(200, 200, 200, 0.65);
 }
 
-/* ===== Dark mode ===== */
 
-.dark-mode { -fx-background-color: #086BAE; }
+.dark-mode {
+    -fx-background-color: #086BAE;
+}
 
-.dark-mode .sidebar      { -fx-background-color: #1A456F; }
-.dark-mode .sidebar-bar  { -fx-background-color: #1A456F; }
-.dark-mode .center-pane  { -fx-background-color: #086BAE; }
-.dark-mode .header-bar   { -fx-background-color: #086BAE; }
-.dark-mode .chat-box     { -fx-background-color: #086BAE; }
-.dark-mode .input-area   { -fx-background-color: #086BAE; }
+.dark-mode .sidebar {
+    -fx-background-color: #1A456F;
+}
 
-.dark-mode .message-box  { -fx-background-color: #444654; }
+.dark-mode .sidebar-bar {
+    -fx-background-color: #1A456F;
+}
+
+.dark-mode .center-pane {
+    -fx-background-color: #086BAE;
+}
+
+.dark-mode .header-bar {
+    -fx-background-color: #086BAE;
+}
+
+.dark-mode .chat-box {
+    -fx-background-color: #086BAE;
+}
+
+.dark-mode .input-area {
+    -fx-background-color: #086BAE;
+}
+
+.dark-mode .message-box {
+    -fx-background-color: #444654;
+}
 
 .dark-mode .message-text {
     -fx-text-fill: #ECECF1;
@@ -267,18 +280,38 @@
     -fx-background-color: #40414F;
 }
 
-/* ===== Light mode ===== */
 
-.light-mode { -fx-background-color: #FFFFFF; }
+.light-mode {
+    -fx-background-color: #FFFFFF;
+}
 
-.light-mode .sidebar      { -fx-background-color: #C8C8C8; }
-.light-mode .sidebar-bar  { -fx-background-color: #C8C8C8; }
-.light-mode .center-pane  { -fx-background-color: #FFFFFF; }
-.light-mode .header-bar   { -fx-background-color: #FFFFFF; }
-.light-mode .chat-box     { -fx-background-color: #FFFFFF; }
-.light-mode .input-area   { -fx-background-color: #FFFFFF; }
+.light-mode .sidebar {
+    -fx-background-color: #C8C8C8;
+}
 
-.light-mode .message-box  { -fx-background-color: #E8F4F8; }
+.light-mode .sidebar-bar {
+    -fx-background-color: #C8C8C8;
+}
+
+.light-mode .center-pane {
+    -fx-background-color: #FFFFFF;
+}
+
+.light-mode .header-bar {
+    -fx-background-color: #FFFFFF;
+}
+
+.light-mode .chat-box {
+    -fx-background-color: #FFFFFF;
+}
+
+.light-mode .input-area {
+    -fx-background-color: #FFFFFF;
+}
+
+.light-mode .message-box {
+    -fx-background-color: #E8F4F8;
+}
 
 .light-mode .message-text {
     -fx-text-fill: #1F2937;
@@ -371,7 +404,6 @@
     -fx-background-color: #ECECF1;
 }
 
-/* ===== Quick question buttons (welcome screen) ===== */
 
 .dark-mode .quick-question-btn {
     -fx-background-color: #2A2B32;
