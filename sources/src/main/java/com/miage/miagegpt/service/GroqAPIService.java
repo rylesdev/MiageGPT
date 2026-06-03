@@ -119,7 +119,7 @@ public class GroqAPIService {
                 "Tu ne dois pas répondre à la question de l'utilisateur.\n" +
                 "Réponds uniquement par un objet JSON valide avec la clé \"tables\" contenant une liste de 1 à "
                 + MAX_TABLES_AMOUNT
-                + " noms de tables pertinentes (en minuscules), par exemple: {\"tables\":[\"campus_infos\",\"sites_web\"]}.\n"
+                + " noms de tables pertinentes (en minuscules), par exemple: {\"tables\":[\"miage_alternance_contrats_salaires\",\"ams_bureau_membres\"]}.\n"
                 +
                 "Ne fournis aucun texte hors du JSON.\n" +
                 "Voici la liste de toutes les tables de la base :\n" + escapeJson(tableNames) + "\n" +
