@@ -143,15 +143,6 @@ public class ConversationManager {
         saveConversation(newName, date, history, language, messageCount);
     }
 
-    public void exportConversationFile(String name, File destinationFile) throws IOException {
-        String safeFileName = toSafeFileName(name) + ".conv";
-        File sourceFile = new File(conversationsFolder, safeFileName);
-        if (!sourceFile.exists()) {
-            throw new FileNotFoundException("Fichier source introuvable pour la conversation : " + name);
-        }
-        Files.copy(sourceFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-    }
-
     private String toSafeFileName(String name) {
         return name.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
     }

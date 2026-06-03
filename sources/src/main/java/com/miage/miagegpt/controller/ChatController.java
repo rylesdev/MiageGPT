@@ -61,10 +61,6 @@ public class ChatController {
         conversationManager.renameConversation(oldName, newName, date, history, language, messageCount);
     }
 
-    public void exportConversation(String conversationName, File file) throws Exception {
-        conversationManager.exportConversationFile(conversationName, file);
-    }
-
     public String buildTurn(String historyBefore, String userPrompt, String assistantResponse) {
         StringBuilder sb = new StringBuilder();
         if (historyBefore != null && !historyBefore.isEmpty()) {
