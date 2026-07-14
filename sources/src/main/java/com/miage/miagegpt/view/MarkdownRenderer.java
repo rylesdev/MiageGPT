@@ -129,12 +129,21 @@ public class MarkdownRenderer {
         String[] lines = text.split("\n", -1);
         for (int li = 0; li < lines.length; li++) {
             String line = lines[li];
-            if (line.startsWith("### ")) {
+            if (line.startsWith("#### ")) {
+                addInlineNodes(flow, line.substring(5), textFill, true, 14, isDarkMode);
+            } else if (line.startsWith("### ")) {
                 addInlineNodes(flow, line.substring(4), textFill, true, 15, isDarkMode);
             } else if (line.startsWith("## ")) {
                 addInlineNodes(flow, line.substring(3), textFill, true, 16, isDarkMode);
             } else if (line.startsWith("# ")) {
                 addInlineNodes(flow, line.substring(2), textFill, true, 18, isDarkMode);
+            } else if (line.startsWith("> ")) {
+                javafx.scene.paint.Color quoteColor = javafx.scene.paint.Color.web(isDarkMode ? "#9CA3AF" : "#6B7280");
+                javafx.scene.text.Text quotePrefix = new javafx.scene.text.Text("  | ");
+                quotePrefix.setFill(quoteColor);
+                quotePrefix.setFont(Font.font("System", FontWeight.BOLD, 14));
+                flow.getChildren().add(quotePrefix);
+                addInlineNodes(flow, line.substring(2), quoteColor, false, 14, isDarkMode);
             } else if (line.length() > 2 && (line.startsWith("- ") || line.startsWith("* "))) {
                 javafx.scene.text.Text bullet = new javafx.scene.text.Text("  • ");
                 bullet.setFill(textFill);

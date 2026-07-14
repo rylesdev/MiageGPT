@@ -9,9 +9,11 @@ import java.util.Scanner;
 
 public class GroqAPIService {
     private static final String API_URL = "https://api.groq.com/openai/v1/chat/completions";
+    private static final String GROQ_MODEL = "openai/gpt-oss-20b";
     private String apiKey;
     private static final int TIMEOUT = 30000;
     public static final int MAX_CONTEXT_MESSAGES = 6;
+    private static final int MAX_TABLES_AMOUNT = 4;
 
     private QuestionAnalyzer questionAnalyzer;
 
@@ -116,8 +118,6 @@ public class GroqAPIService {
         }
     }
 
-    private int MAX_TABLES_AMOUNT = 6;
-
     private String createJsonRequestForTableSelection(String tableNames, String userQuestion) {
         String system = "Tu es un assistant qui aide à sélectionner les tables pertinentes d'une base de données.\n" +
                 "Tu ne dois pas répondre à la question de l'utilisateur.\n" +
@@ -128,7 +128,7 @@ public class GroqAPIService {
                 "Ne fournis aucun texte hors du JSON.\n" +
                 "Voici la liste de toutes les tables de la base :\n" + escapeJson(tableNames) + "\n" +
                 "Question de l'utilisateur: \"" + escapeJson(userQuestion) + "\"\n" +
-                "Choisis entre 1 et 3 tables maximum.\n" +
+                "Choisis entre 1 et " + MAX_TABLES_AMOUNT + " tables maximum.\n" +
                 "Retourne uniquement le JSON requis.";
 
         StringBuilder messages = new StringBuilder();
@@ -138,7 +138,7 @@ public class GroqAPIService {
         messages.append(",{\"role\": \"user\", \"content\": \"").append(escapeJson(userQuestion)).append("\"}");
 
         return "{" +
-                "\"model\": \"meta-llama/llama-4-scout-17b-16e-instruct\"," +
+                "\"model\": \"" + GROQ_MODEL + "\"," +
                 "\"messages\": [" + messages.toString() + "]," +
                 "\"max_tokens\": 200," +
                 "\"temperature\": 0.0," +
@@ -161,7 +161,7 @@ public class GroqAPIService {
                 java.util.regex.Matcher mm = q.matcher(inside);
                 while (mm.find()) {
                     String t = mm.group(1).trim();
-                    if (!t.isEmpty() && result.size() < 3)
+                    if (!t.isEmpty() && result.size() < MAX_TABLES_AMOUNT)
                         result.add(t);
                 }
             }
@@ -327,7 +327,7 @@ public class GroqAPIService {
                 .append("\"}");
 
         return "{" +
-                "\"model\": \"meta-llama/llama-4-scout-17b-16e-instruct\"," +
+                "\"model\": \"" + GROQ_MODEL + "\"," +
                 "\"messages\": [" + messages.toString() + "]," +
                 "\"max_tokens\": 512," +
                 "\"temperature\": 0.0," +
@@ -359,7 +359,7 @@ public class GroqAPIService {
                 .append("\"}");
 
         return "{" +
-                "\"model\": \"meta-llama/llama-4-scout-17b-16e-instruct\"," +
+                "\"model\": \"" + GROQ_MODEL + "\"," +
                 "\"messages\": [" + messages.toString() + "]," +
                 "\"max_tokens\": 256," +
                 "\"temperature\": 0.0," +
@@ -392,6 +392,8 @@ public class GroqAPIService {
                 String friendly;
                 if (responseCode == 401)
                     friendly = "Clé API invalide ou expirée. Vérifiez votre clé Groq dans les paramètres.";
+                else if (responseCode == 413)
+                    friendly = "La requête est trop volumineuse (code 413). Réduis la question ou le contexte puis réessaie.";
                 else if (responseCode == 429)
                     friendly = "Limite de requêtes atteinte. Attendez quelques secondes avant de réessayer.";
                 else if (responseCode == 503 || responseCode == 502)
@@ -458,6 +460,7 @@ public class GroqAPIService {
 
             String text = responseBody.substring(textStart + 1, textEnd);
             text = text.replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            text = text.replace("\\u003c", "<").replace("\\u003e", ">").replace("\\u0026", "&");
             return text;
 
         } catch (Exception e) {
@@ -475,7 +478,7 @@ public class GroqAPIService {
                     + "- En français\n"
                     + "Message : \"" + escapeJson(firstMessage) + "\"\n"
                     + "Titre :";
-            String json = "{\"model\": \"meta-llama/llama-4-scout-17b-16e-instruct\","
+            String json = "{\"model\": \"" + GROQ_MODEL + "\","
                     + "\"messages\":[{\"role\":\"user\",\"content\":\"" + escapeJson(prompt) + "\"}],"
                     + "\"max_tokens\":30,\"temperature\":0.6,\"top_p\":0.9}";
             APIResponse r = sendRequest(json);
@@ -510,7 +513,8 @@ public class GroqAPIService {
             connection.setReadTimeout(TIMEOUT);
             connection.setDoOutput(true);
 
-            String testBody = "{\"model\": \"meta-llama/llama-4-scout-17b-16e-instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1,\"temperature\":0.0,\"top_p\":0.1}";
+            String testBody = "{\"model\": \"" + GROQ_MODEL
+                    + "\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1,\"temperature\":0.0,\"top_p\":0.1}";
 
             try (OutputStream os = connection.getOutputStream()) {
                 byte[] input = testBody.getBytes(StandardCharsets.UTF_8);
