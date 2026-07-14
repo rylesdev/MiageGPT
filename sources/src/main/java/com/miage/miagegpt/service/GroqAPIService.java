@@ -474,13 +474,14 @@ public class GroqAPIService {
                     + "Règles strictes :\n"
                     + "- Groupe nominal (pas une question, pas une phrase verbale)\n"
                     + "- 2 à 5 mots, informatif et précis\n"
-                    + "- Ne copie jamais le message mot pour mot\n"
+                    + "- Ne copie pas le message mot pour mot\n"
                     + "- En français\n"
                     + "Message : \"" + escapeJson(firstMessage) + "\"\n"
                     + "Titre :";
             String json = "{\"model\": \"" + GROQ_MODEL + "\","
                     + "\"messages\":[{\"role\":\"user\",\"content\":\"" + escapeJson(prompt) + "\"}],"
-                    + "\"max_tokens\":30,\"temperature\":0.6,\"top_p\":0.9}";
+                    + "\"max_tokens\":400,\"temperature\":0.6,\"top_p\":0.9,"
+                    + "\"reasoning_effort\":\"low\"}";
             APIResponse r = sendRequest(json);
             if (r != null && r.content != null) {
                 String title = r.content.trim().replaceAll("^[\"']+|[\"']+$", "").trim();
@@ -515,7 +516,6 @@ public class GroqAPIService {
 
             String testBody = "{\"model\": \"" + GROQ_MODEL
                     + "\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1,\"temperature\":0.0,\"top_p\":0.1}";
-
             try (OutputStream os = connection.getOutputStream()) {
                 byte[] input = testBody.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
